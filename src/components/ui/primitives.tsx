@@ -18,7 +18,7 @@ export function Card({
 }) {
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={cx("card card-tap text-left", className)}>
+      <button type="button" onClick={onClick} className={cx("card card-tap block w-full text-left", className)}>
         {children}
       </button>
     );
