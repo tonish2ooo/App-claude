@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, Card, EmptyState, Pill } from "@/components/ui/primitives";
+import { Amount, BudgetTile, Card, EmptyState, Pill } from "@/components/ui/primitives";
 import { contributionSummaries } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
 
@@ -18,6 +18,14 @@ interface ActivityItem {
   amountCents: number;
   badge: { label: string; tone: "neutral" | "brand" | "ok" | "warn" | "danger" };
 }
+
+const KIND_VISUAL: Record<Exclude<Filter, "all">, { icon: string; bg: string }> = {
+  expense: { icon: "🧾", bg: "#eef2ff" },
+  income: { icon: "💰", bg: "#e7f7ee" },
+  contribution: { icon: "🤝", bg: "#ede7ff" },
+  provision: { icon: "🔁", bg: "#fff1e2" },
+  meal_voucher: { icon: "🍽️", bg: "#e0f7f4" },
+};
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
   { value: "all", label: "Toutes" },
@@ -126,22 +134,26 @@ export default function ActivityPage() {
       </div>
 
       <div className="space-y-2">
-        {filtered.map((item) => (
-          <Card key={item.id}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{item.title}</p>
-                <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>
-                <div className="mt-1">
-                  <Pill tone={item.badge.tone}>{item.badge.label}</Pill>
+        {filtered.map((item) => {
+          const visual = KIND_VISUAL[item.kind];
+          return (
+            <Card key={item.id}>
+              <div className="flex items-center gap-3">
+                <BudgetTile icon={visual.icon} bg={visual.bg} size={42} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{item.title}</p>
+                  <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>
+                  <div className="mt-1">
+                    <Pill tone={item.badge.tone}>{item.badge.label}</Pill>
+                  </div>
                 </div>
+                <p className={"shrink-0 font-semibold " + (item.amountCents >= 0 ? "text-ok" : "text-ink")}>
+                  <Amount cents={item.amountCents} sign />
+                </p>
               </div>
-              <p className={"shrink-0 font-semibold " + (item.amountCents >= 0 ? "text-ok" : "text-ink")}>
-                <Amount cents={item.amountCents} sign />
-              </p>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
         {filtered.length === 0 && <EmptyState icon="📋" title="Aucune activité" />}
       </div>
     </div>

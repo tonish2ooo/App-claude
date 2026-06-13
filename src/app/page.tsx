@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, Card, EmptyState, Pill, ProgressBar, SectionTitle } from "@/components/ui/primitives";
+import { Amount, BudgetTile, Card, EmptyState, Pill, ProgressBar, SectionTitle, Sparkline } from "@/components/ui/primitives";
+import { tileColorFor } from "@/components/ui/budgetColor";
 import { Sheet } from "@/components/ui/Sheet";
 import { IncomeForm } from "@/components/forms/IncomeForm";
 import { buildDashboardSummary } from "@/lib/calc/dashboard";
@@ -64,14 +65,21 @@ export default function DashboardPage() {
       )}
 
       {/* Restant sur le budget du mois */}
-      <Card className="bg-brand-600 text-white">
-        <p className="text-sm text-brand-100">Restant sur le budget du mois</p>
-        <p className="mt-1 text-3xl font-bold">
-          <Amount cents={summary.remainingBudgetCents} />
-        </p>
-        <div className="mt-2 flex justify-between text-xs text-brand-100">
-          <span>Budget prévu {formatCents(summary.budgetTotalCents)}</span>
-          <span>Dépensé {formatCents(summary.spentTotalCents)}</span>
+      <Card className="relative overflow-hidden bg-hero text-white shadow-hero">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm text-white/80">Restant sur le budget du mois</p>
+            <p className="mt-1 text-3xl font-bold">
+              <Amount cents={summary.remainingBudgetCents} />
+            </p>
+            <p className="mt-1 text-xs text-white/70">
+              Dépensé {formatCents(summary.spentTotalCents)} sur {formatCents(summary.budgetTotalCents)}
+            </p>
+          </div>
+          <Sparkline
+            values={summary.budgetProgress.map((p) => p.spentCents)}
+            className="h-12 w-24 shrink-0"
+          />
         </div>
       </Card>
 
@@ -93,15 +101,19 @@ export default function DashboardPage() {
       {/* Tickets restaurant restants */}
       <SectionTitle>Tickets restaurant</SectionTitle>
       <div className="grid grid-cols-2 gap-3">
-        {summary.mealVoucherBalances.map((b) => (
-          <Card key={b.userId}>
-            <p className="text-xs text-ink-muted">{userName(b.userId)}</p>
-            <p className="text-xl font-bold">
-              <Amount cents={b.remainingCents} />
-            </p>
-            <p className="text-xs text-ink-muted">sur {formatCents(b.grantedCents)}</p>
-          </Card>
-        ))}
+        {summary.mealVoucherBalances.map((b) => {
+          const used = b.grantedCents > 0 ? b.spentCents / b.grantedCents : 0;
+          return (
+            <Card key={b.userId}>
+              <p className="text-xs text-ink-muted">{userName(b.userId)}</p>
+              <p className="text-xl font-bold">
+                <Amount cents={b.remainingCents} />
+              </p>
+              <p className="mb-2 text-xs text-ink-muted">sur {formatCents(b.grantedCents)}</p>
+              <ProgressBar progress={used} status="normal" color="#14b8a6" />
+            </Card>
+          );
+        })}
         {summary.mealVoucherBalances.length === 0 && (
           <div className="col-span-2">
             <EmptyState icon="🎫" title="Aucun ticket restaurant déclaré" />
@@ -129,7 +141,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-[11px] text-ink-muted">Reste</p>
-                <p className="text-sm font-semibold text-ok">{formatCents(c.remainingTotalCents)}</p>
+                <p className="text-sm font-semibold text-accent">{formatCents(c.remainingTotalCents)}</p>
               </div>
             </div>
             <div className="mt-2 flex justify-between border-t border-slate-100 pt-2 text-xs text-ink-soft">
@@ -149,10 +161,11 @@ export default function DashboardPage() {
         {budgets.map((budget) => {
           const progress = summary.budgetProgress.find((p) => p.budgetId === budget.id);
           if (!progress) return null;
+          const color = tileColorFor(budget.id);
           return (
             <Card key={budget.id} onClick={() => router.push(`/budgets/${budget.id}`)}>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{budget.icon}</span>
+                <BudgetTile icon={budget.icon} bg={color.bg} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <p className="truncate font-medium">{budget.name}</p>
@@ -162,7 +175,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="mt-2">
-                    <ProgressBar progress={progress.progress} status={progress.status} />
+                    <ProgressBar progress={progress.progress} status={progress.status} color={color.bar} />
                   </div>
                   <div className="mt-1 flex items-center justify-between">
                     <Pill tone="neutral">

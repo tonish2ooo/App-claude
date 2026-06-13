@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
-import { Amount, Card, EmptyState, Pill, ProgressBar, SectionTitle } from "@/components/ui/primitives";
+import { Amount, BudgetTile, Card, EmptyState, Pill, ProgressBar, SectionTitle } from "@/components/ui/primitives";
+import { tileColorFor } from "@/components/ui/budgetColor";
 import { Sheet } from "@/components/ui/Sheet";
 import { BudgetForm } from "@/components/forms/BudgetForm";
 import { getMonthlyBudgetAmount } from "@/lib/calc/budget";
@@ -88,7 +89,7 @@ export default function BudgetDetailPage() {
 
       <Card>
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{budget.icon}</span>
+          <BudgetTile icon={budget.icon} bg={tileColorFor(budget.id).bg} size={52} />
           <div className="flex-1">
             <h1 className="text-lg font-bold">{budget.name}</h1>
             <Pill tone="neutral">{TYPE_LABEL[budget.type]}</Pill>
@@ -103,7 +104,7 @@ export default function BudgetDetailPage() {
             </span>
           </div>
           <div className="mt-2">
-            <ProgressBar progress={data.progress} status={status} />
+            <ProgressBar progress={data.progress} status={status} color={tileColorFor(budget.id).bar} />
           </div>
           <p className="mt-1 text-right text-xs text-ink-muted">{Math.round(data.progress * 100)} % atteint</p>
         </div>

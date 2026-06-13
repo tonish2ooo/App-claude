@@ -27,14 +27,17 @@ export function AppFrame({ children }: { children: ReactNode }) {
     return <LoginScreen />;
   }
 
+  const activeUsers = state.users.filter((u) => u.active);
+  const names = activeUsers.map((u) => u.firstName).join(" & ") || currentUser.firstName;
+
   return (
     <div className="app-shell">
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-100 bg-surface/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-surface-subtle/95 px-4 py-3 backdrop-blur">
         <div>
-          <p className="text-xs text-ink-muted">Foyer</p>
-          <p className="text-sm font-semibold">{state.household.name}</p>
+          <p className="text-sm text-ink-soft">Bonjour 👋</p>
+          <p className="text-lg font-bold">{names}</p>
         </div>
-        <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} src={currentUser.photoUrl} size={36} />
+        <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} src={currentUser.photoUrl} size={40} />
       </header>
 
       <main className="flex-1 px-4 pb-28 pt-2">{children}</main>

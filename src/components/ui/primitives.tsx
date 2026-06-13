@@ -51,16 +51,43 @@ export function Amount({
 export function ProgressBar({
   progress,
   status,
+  color,
 }: {
   progress: number;
   status: "normal" | "warning" | "over";
+  /** Couleur de barre personnalisée (ignorée en cas de dépassement). */
+  color?: string;
 }) {
   const pct = Math.min(100, Math.max(0, progress * 100));
-  const color =
+  const useCustom = color && status !== "over";
+  const fallback =
     status === "over" ? "bg-danger" : status === "warning" ? "bg-warn" : "bg-brand-600";
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-      <div className={cx("h-full rounded-full transition-all", color)} style={{ width: `${pct}%` }} />
+    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+      <div
+        className={cx("h-full rounded-full transition-all", useCustom ? "" : fallback)}
+        style={{ width: `${pct}%`, ...(useCustom ? { backgroundColor: color } : {}) }}
+      />
+    </div>
+  );
+}
+
+/** Tuile colorée contenant le pictogramme d'un budget. */
+export function BudgetTile({
+  icon,
+  bg,
+  size = 44,
+}: {
+  icon: string;
+  bg: string;
+  size?: number;
+}) {
+  return (
+    <div
+      className="flex items-center justify-center rounded-2xl"
+      style={{ width: size, height: size, background: bg, fontSize: size * 0.45 }}
+    >
+      {icon}
     </div>
   );
 }
@@ -110,6 +137,40 @@ export function Avatar({ name, src, size = 40 }: { name: string; src?: string; s
     >
       {initials || "?"}
     </div>
+  );
+}
+
+/** Mini-courbe décorative et data-driven (SVG, sans dépendance). */
+export function Sparkline({
+  values,
+  className,
+  stroke = "rgba(255,255,255,0.95)",
+  fill = "rgba(255,255,255,0.18)",
+}: {
+  values: number[];
+  className?: string;
+  stroke?: string;
+  fill?: string;
+}) {
+  const w = 120;
+  const h = 40;
+  const series = values.length >= 2 ? values : [0, 0];
+  const max = Math.max(...series, 1);
+  const min = Math.min(...series, 0);
+  const span = max - min || 1;
+  const step = w / (series.length - 1);
+  const pts = series.map((v, i) => {
+    const x = i * step;
+    const y = h - ((v - min) / span) * (h - 6) - 3;
+    return [x, y] as const;
+  });
+  const line = pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const area = `${line} L${w},${h} L0,${h} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className}>
+      <path d={area} fill={fill} />
+      <path d={line} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

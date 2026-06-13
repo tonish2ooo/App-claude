@@ -36,7 +36,7 @@ export function QuickActions() {
         type="button"
         aria-label="Actions rapides"
         onClick={() => setAction("menu")}
-        className="fixed bottom-20 left-1/2 z-40 flex h-14 w-14 -translate-x-[calc(50%-7.5rem)] items-center justify-center rounded-full bg-brand-600 text-3xl text-white shadow-fab transition active:scale-95 sm:-translate-x-[calc(50%-8rem)]"
+        className="fixed bottom-7 left-1/2 z-40 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-hero text-3xl font-light text-white shadow-fab ring-4 ring-surface transition active:scale-95"
       >
         +
       </button>
