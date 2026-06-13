@@ -14,7 +14,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
   if (!ready) {
     return (
       <div className="app-shell items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-muted border-t-brand-600" />
       </div>
     );
   }
@@ -32,12 +32,12 @@ export function AppFrame({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-surface-subtle/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-surface-subtle/90 px-4 py-3 backdrop-blur-xl">
         <div>
-          <p className="text-sm text-ink-soft">Bonjour 👋</p>
-          <p className="text-lg font-bold">{names}</p>
+          <p className="text-[13px] text-ink-muted">Bonjour</p>
+          <p className="text-xl font-bold tracking-tight">{names}</p>
         </div>
-        <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} src={currentUser.photoUrl} size={40} />
+        <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} src={currentUser.photoUrl} size={38} />
       </header>
 
       <main className="flex-1 px-4 pb-28 pt-2">{children}</main>

@@ -4,32 +4,44 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "SF Pro Display",
+          "SF Pro Text",
+          "Helvetica Neue",
+          "sans-serif",
+        ],
+      },
       colors: {
         ink: {
-          DEFAULT: "#1c1430",
-          soft: "#6b6480",
-          muted: "#a09bb0",
+          DEFAULT: "#000000",
+          soft: "#3c3c43",
+          muted: "#8e8e93",
+          faint: "#c7c7cc",
         },
         brand: {
-          50: "#f3f0ff",
-          100: "#e9e3ff",
-          200: "#d6caff",
-          500: "#8b6df0",
-          600: "#6d4ef0",
-          700: "#5a3ee0",
+          50: "#e5f2ff",
+          100: "#cce4ff",
+          200: "#99caff",
+          500: "#0a84ff",
+          600: "#007aff",
+          700: "#0060d0",
         },
         accent: {
-          DEFAULT: "#f43f7e",
-          soft: "#fde6ee",
+          DEFAULT: "#ff2d55",
+          soft: "#ffe5eb",
         },
         surface: {
           DEFAULT: "#ffffff",
-          subtle: "#f6f5fb",
-          muted: "#f1eff8",
+          subtle: "#f2f2f7",
+          muted: "#e5e5ea",
         },
-        ok: "#16a34a",
-        warn: "#d97706",
-        danger: "#dc2626",
+        ok: "#34c759",
+        warn: "#ff9500",
+        danger: "#ff3b30",
+        teal: "#32ade6",
       },
       borderRadius: {
         xl: "1rem",
@@ -37,12 +49,12 @@ const config: Config = {
         "3xl": "1.75rem",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(28,20,48,0.04), 0 8px 24px rgba(28,20,48,0.06)",
-        fab: "0 10px 24px rgba(109,78,240,0.45)",
-        hero: "0 16px 40px rgba(109,78,240,0.35)",
+        card: "0 1px 0 rgba(0,0,0,0.06)",
+        fab: "0 4px 16px rgba(0,122,255,0.35)",
+        hero: "0 2px 8px rgba(0,0,0,0.08)",
       },
       backgroundImage: {
-        hero: "linear-gradient(135deg, #7c5cfc 0%, #6d4ef0 55%, #5a3ee0 100%)",
+        hero: "linear-gradient(135deg, #007aff 0%, #0060d0 100%)",
       },
       maxWidth: {
         app: "30rem",

@@ -1,18 +1,18 @@
-/** Palette de tuiles colorées pour les budgets (fond pastel + couleur vive). */
+/** iOS system color palette for budget tiles. */
 export interface TileColor {
   bg: string;
   bar: string;
 }
 
 const PALETTE: TileColor[] = [
-  { bg: "#e7f7ee", bar: "#22c55e" }, // vert
-  { bg: "#e6f0fe", bar: "#3b82f6" }, // bleu
-  { bg: "#ede7ff", bar: "#7c5cfc" }, // violet
-  { bg: "#fff1e2", bar: "#f59e0b" }, // ambre
-  { bg: "#fde7f0", bar: "#ec4899" }, // rose
-  { bg: "#e0f7f4", bar: "#14b8a6" }, // turquoise
-  { bg: "#feeaea", bar: "#ef4444" }, // rouge
-  { bg: "#eef2ff", bar: "#6366f1" }, // indigo
+  { bg: "#e5f2ff", bar: "#007aff" }, // iOS Blue
+  { bg: "#e8faf0", bar: "#34c759" }, // iOS Green
+  { bg: "#fff4e0", bar: "#ff9500" }, // iOS Orange
+  { bg: "#ffe5e8", bar: "#ff3b30" }, // iOS Red
+  { bg: "#f0eeff", bar: "#5856d6" }, // iOS Indigo
+  { bg: "#ffe5ef", bar: "#ff2d55" }, // iOS Pink
+  { bg: "#e4f5fb", bar: "#32ade6" }, // iOS Teal
+  { bg: "#f5e8ff", bar: "#af52de" }, // iOS Purple
 ];
 
 function hashString(value: string): number {

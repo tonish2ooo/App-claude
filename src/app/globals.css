@@ -14,6 +14,7 @@ body {
 body {
   @apply bg-surface-subtle text-ink antialiased;
   -webkit-tap-highlight-color: transparent;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 @layer components {
@@ -26,7 +27,7 @@ body {
   }
 
   .card-tap {
-    @apply transition active:scale-[0.99];
+    @apply transition active:scale-[0.99] active:bg-surface-subtle;
   }
 
   .pill {
@@ -34,28 +35,37 @@ body {
   }
 
   .field-label {
-    @apply mb-1 block text-sm font-medium text-ink-soft;
+    @apply mb-1 block text-sm font-medium text-ink-muted;
   }
 
   .field-input {
-    @apply w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-base
-      outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    @apply w-full rounded-xl border-0 bg-surface-subtle px-3.5 py-2.5 text-base
+      outline-none transition focus:ring-2 focus:ring-brand-600/30;
   }
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm
-      font-semibold transition active:scale-[0.98] disabled:opacity-50;
+      font-semibold transition active:scale-[0.98] disabled:opacity-40;
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-brand-600 text-white active:bg-brand-700;
   }
 
   .btn-ghost {
-    @apply btn bg-surface-muted text-ink-soft hover:bg-slate-200;
+    @apply btn bg-surface-subtle text-brand-600;
   }
 
   .btn-danger {
-    @apply btn bg-red-50 text-danger hover:bg-red-100;
+    @apply btn bg-surface-subtle text-danger;
+  }
+
+  /* iOS-style list row */
+  .list-row {
+    @apply flex items-center gap-3 px-4 py-3;
+  }
+
+  .list-separator {
+    @apply ml-16 border-b border-surface-muted;
   }
 }

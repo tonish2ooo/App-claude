@@ -36,7 +36,7 @@ export function QuickActions() {
         type="button"
         aria-label="Actions rapides"
         onClick={() => setAction("menu")}
-        className="fixed bottom-7 left-1/2 z-40 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-hero text-3xl font-light text-white shadow-fab ring-4 ring-surface transition active:scale-95"
+        className="fixed bottom-7 left-1/2 z-40 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-brand-600 text-3xl font-light text-white shadow-fab ring-4 ring-surface transition active:scale-95"
       >
         +
       </button>
@@ -50,7 +50,7 @@ export function QuickActions() {
               onClick={() => setAction(item.key)}
               className={
                 "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition " +
-                (item.primary ? "bg-brand-50 text-brand-700" : "bg-surface-muted text-ink")
+                (item.primary ? "bg-brand-50 text-brand-600" : "bg-surface-subtle text-ink")
               }
             >
               <span className="text-xl">{item.icon}</span>

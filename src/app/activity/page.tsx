@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, BudgetTile, Card, EmptyState, Pill } from "@/components/ui/primitives";
+import { Amount, BudgetTile, Card, EmptyState } from "@/components/ui/primitives";
 import { contributionSummaries } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
 
@@ -16,15 +16,23 @@ interface ActivityItem {
   title: string;
   subtitle: string;
   amountCents: number;
-  badge: { label: string; tone: "neutral" | "brand" | "ok" | "warn" | "danger" };
+  badge: { label: string; color: string; bg: string };
 }
 
 const KIND_VISUAL: Record<Exclude<Filter, "all">, { icon: string; bg: string }> = {
-  expense: { icon: "🧾", bg: "#eef2ff" },
-  income: { icon: "💰", bg: "#e7f7ee" },
-  contribution: { icon: "🤝", bg: "#ede7ff" },
-  provision: { icon: "🔁", bg: "#fff1e2" },
-  meal_voucher: { icon: "🍽️", bg: "#e0f7f4" },
+  expense: { icon: "🧾", bg: "#f2f2f7" },
+  income: { icon: "💰", bg: "#e8faf0" },
+  contribution: { icon: "🤝", bg: "#f0eeff" },
+  provision: { icon: "🔁", bg: "#fff4e0" },
+  meal_voucher: { icon: "🍽️", bg: "#e4f5fb" },
+};
+
+const BADGE: Record<Exclude<Filter, "all">, { label: string; color: string; bg: string }> = {
+  expense: { label: "Dépense", color: "#3c3c43", bg: "#e5e5ea" },
+  income: { label: "Revenu", color: "#34c759", bg: "#e8faf0" },
+  contribution: { label: "Contribution", color: "#5856d6", bg: "#f0eeff" },
+  provision: { label: "Provision", color: "#ff9500", bg: "#fff4e0" },
+  meal_voucher: { label: "Tickets resto", color: "#32ade6", bg: "#e4f5fb" },
 };
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
@@ -51,16 +59,15 @@ export default function ActivityPage() {
 
     for (const e of monthExpenses) {
       const isMeal = e.paymentSource === "meal_voucher";
+      const kind: Exclude<Filter, "all"> = isMeal ? "meal_voucher" : "expense";
       result.push({
         id: e.id,
-        kind: isMeal ? "meal_voucher" : "expense",
+        kind,
         date: e.date,
         title: merchantName(e.merchantId),
         subtitle: `${budgetName(e.budgetId)} · ${userName(e.userId)}`,
         amountCents: -e.amountCents,
-        badge: isMeal
-          ? { label: "Tickets resto", tone: "warn" }
-          : { label: "Dépense bancaire", tone: "neutral" },
+        badge: BADGE[kind],
       });
     }
 
@@ -70,9 +77,9 @@ export default function ActivityPage() {
         kind: "income",
         date: i.declaredAt,
         title: `Revenus ${userName(i.userId)}`,
-        subtitle: `Salaire + tickets restaurant`,
+        subtitle: "Salaire + tickets restaurant",
         amountCents: i.salaryCents + i.mealVouchersCents,
-        badge: { label: "Revenu", tone: "ok" },
+        badge: BADGE.income,
       });
     }
 
@@ -84,7 +91,7 @@ export default function ActivityPage() {
         title: p.label,
         subtitle: "Mise de côté mensuelle",
         amountCents: -p.amountCents,
-        badge: { label: "Provision", tone: "brand" },
+        badge: BADGE.provision,
       });
     }
 
@@ -103,7 +110,7 @@ export default function ActivityPage() {
         title: `Contribution ${userName(c.userId)}`,
         subtitle: "Participation aux budgets du mois",
         amountCents: c.contributionTotalCents,
-        badge: { label: "Contribution", tone: "brand" },
+        badge: BADGE.contribution,
       });
     }
 
@@ -114,10 +121,10 @@ export default function ActivityPage() {
   const filtered = filter === "all" ? items : items.filter((i) => i.kind === filter);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       <MonthSwitcher />
 
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
         {FILTERS.map((f) => (
           <button
             key={f.value}
@@ -125,7 +132,7 @@ export default function ActivityPage() {
             onClick={() => setFilter(f.value)}
             className={
               "whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition " +
-              (filter === f.value ? "bg-brand-600 text-white" : "bg-surface text-ink-soft shadow-card")
+              (filter === f.value ? "bg-brand-600 text-white" : "bg-surface text-ink-muted shadow-card")
             }
           >
             {f.label}
@@ -133,28 +140,40 @@ export default function ActivityPage() {
         ))}
       </div>
 
-      <div className="space-y-2">
-        {filtered.map((item) => {
-          const visual = KIND_VISUAL[item.kind];
-          return (
-            <Card key={item.id}>
-              <div className="flex items-center gap-3">
-                <BudgetTile icon={visual.icon} bg={visual.bg} size={42} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.title}</p>
-                  <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>
-                  <div className="mt-1">
-                    <Pill tone={item.badge.tone}>{item.badge.label}</Pill>
+      <div className="mt-2">
+        {filtered.length === 0 ? (
+          <EmptyState icon="📋" title="Aucune activité" />
+        ) : (
+          <Card>
+            {filtered.map((item, i) => {
+              const visual = KIND_VISUAL[item.kind];
+              return (
+                <div key={item.id}>
+                  {i > 0 && <div className="my-3 border-t border-surface-muted" />}
+                  <div className="flex items-center gap-3">
+                    <BudgetTile icon={visual.icon} bg={visual.bg} size={40} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{item.title}</p>
+                      <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>
+                      <span
+                        className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ background: item.badge.bg, color: item.badge.color }}
+                      >
+                        {item.badge.label}
+                      </span>
+                    </div>
+                    <p
+                      className="shrink-0 font-semibold"
+                      style={{ color: item.amountCents >= 0 ? "#34c759" : "#000" }}
+                    >
+                      <Amount cents={item.amountCents} sign />
+                    </p>
                   </div>
                 </div>
-                <p className={"shrink-0 font-semibold " + (item.amountCents >= 0 ? "text-ok" : "text-ink")}>
-                  <Amount cents={item.amountCents} sign />
-                </p>
-              </div>
-            </Card>
-          );
-        })}
-        {filtered.length === 0 && <EmptyState icon="📋" title="Aucune activité" />}
+              );
+            })}
+          </Card>
+        )}
       </div>
     </div>
   );
