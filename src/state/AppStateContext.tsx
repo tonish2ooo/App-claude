@@ -17,6 +17,7 @@ import {
   type Merchant,
   type Month,
   type MonthlyIncome,
+  type PasskeyCredential,
   type ProvisionStatus,
   type UserProfile,
 } from "@/lib/types";
@@ -70,6 +71,9 @@ interface AppStateApi {
   removeExpense: (id: string) => void;
 
   setProvisionStatus: (id: string, status: ProvisionStatus) => void;
+
+  addPasskey: (credential: PasskeyCredential) => void;
+  removePasskey: (id: string) => void;
 }
 
 const AppStateContext = createContext<AppStateApi | null>(null);
@@ -316,6 +320,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             p.id === id ? { ...p, status, updatedAt: now() } : p,
           ),
         })),
+
+      addPasskey: (credential) =>
+        update((prev) => ({ ...prev, passkeys: [...prev.passkeys, credential] })),
+      removePasskey: (id) =>
+        update((prev) => ({ ...prev, passkeys: prev.passkeys.filter((p) => p.id !== id) })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, ready]);
