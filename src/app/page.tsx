@@ -46,10 +46,13 @@ export default function DashboardPage() {
   );
   const mealVouchersRatio =
     mealVouchersTotalGranted > 0 ? mealVouchersTotalRemaining / mealVouchersTotalGranted : 0;
+  const mealVouchersColor = mealVouchersTotalRemaining < 0 ? "#ff3b30" : "#32ade6";
   const commonAccountRatio =
     summary.commonAccountTotalCents > 0
       ? summary.commonBalanceCents / summary.commonAccountTotalCents
       : 0;
+  const commonAccountColor =
+    summary.commonBalanceCents < 0 ? "#ff3b30" : commonAccountRatio < 0.15 ? "#ff9500" : "#007aff";
 
   const globalProgress =
     summary.budgetTotalCents > 0 ? summary.spentTotalCents / summary.budgetTotalCents : 0;
@@ -113,8 +116,8 @@ export default function DashboardPage() {
       <div className="mt-2">
         <Card>
           <div className="flex items-center gap-4">
-            <RingProgress progress={commonAccountRatio} size={56} stroke={6} color="#007aff">
-              <span className="text-[10px] font-bold" style={{ color: "#007aff" }}>
+            <RingProgress progress={commonAccountRatio} size={56} stroke={6} color={commonAccountColor}>
+              <span className="text-[10px] font-bold" style={{ color: commonAccountColor }}>
                 {Math.round(commonAccountRatio * 100)}%
               </span>
             </RingProgress>
@@ -132,7 +135,10 @@ export default function DashboardPage() {
                   {summary.commonBalanceStatus === "synced" ? "Synchronisé" : "Estimé"}
                 </span>
               </div>
-              <p className="mt-0.5 text-2xl font-bold tracking-tight">
+              <p
+                className="mt-0.5 text-2xl font-bold tracking-tight"
+                style={{ color: summary.commonBalanceCents < 0 ? "#ff3b30" : "#000" }}
+              >
                 <Amount cents={summary.commonBalanceCents} />
                 <span className="text-sm font-normal text-ink-muted">
                   {" "}/ {formatCents(summary.commonAccountTotalCents)}
@@ -148,14 +154,14 @@ export default function DashboardPage() {
         <div className="mt-2">
           <Card>
             <div className="flex items-center gap-4">
-              <RingProgress progress={mealVouchersRatio} size={56} stroke={6} color="#32ade6">
-                <span className="text-[10px] font-bold" style={{ color: "#32ade6" }}>
+              <RingProgress progress={mealVouchersRatio} size={56} stroke={6} color={mealVouchersColor}>
+                <span className="text-[10px] font-bold" style={{ color: mealVouchersColor }}>
                   {Math.round(mealVouchersRatio * 100)}%
                 </span>
               </RingProgress>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-ink-muted">Tickets restaurant</p>
-                <p className="mt-0.5 text-2xl font-bold tracking-tight" style={{ color: "#32ade6" }}>
+                <p className="mt-0.5 text-2xl font-bold tracking-tight" style={{ color: mealVouchersColor }}>
                   <Amount cents={mealVouchersTotalRemaining} />
                   <span className="text-sm font-normal text-ink-muted">
                     {" "}/ {formatCents(mealVouchersTotalGranted)}
@@ -214,11 +220,19 @@ export default function DashboardPage() {
                 </div>
                 <div className="rounded-xl bg-surface-subtle p-2 text-center">
                   <p className="text-[10px] text-ink-muted">Argent de poche</p>
-                  <p className="text-xs font-bold text-ok">{formatCents(c.remainingTotalCents)}</p>
+                  <p
+                    className="text-xs font-bold"
+                    style={{ color: c.remainingTotalCents < 0 ? "#ff3b30" : "#34c759" }}
+                  >
+                    {formatCents(c.remainingTotalCents)}
+                  </p>
                 </div>
                 <div className="rounded-xl bg-surface-subtle p-2 text-center">
                   <p className="text-[10px] text-ink-muted">Reste TR</p>
-                  <p className="text-xs font-bold" style={{ color: "#32ade6" }}>
+                  <p
+                    className="text-xs font-bold"
+                    style={{ color: c.remainingMealVouchersCents < 0 ? "#ff3b30" : "#32ade6" }}
+                  >
                     {formatCents(c.remainingMealVouchersCents)}
                   </p>
                 </div>
