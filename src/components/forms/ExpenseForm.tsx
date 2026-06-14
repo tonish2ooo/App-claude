@@ -4,25 +4,33 @@ import { useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { Field, Segmented, Select, TextArea, TextInput } from "@/components/ui/fields";
 import { SplitEditor } from "@/components/forms/SplitEditor";
-import { parseAmountToCents } from "@/lib/money";
+import { centsToInput, parseAmountToCents } from "@/lib/money";
 import { todayIso } from "@/lib/date";
 import type { BudgetSplitRule, Expense, ExpensePaymentSource } from "@/lib/types";
 
-export function ExpenseForm({ onDone }: { onDone: () => void }) {
+export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?: Expense }) {
   const app = useAppState();
   const { state, currentUser, activeUsers, currentMonth } = app;
   const incomeComplete = state.incomes.some((i) => i.month === currentMonth);
 
-  const [merchantId, setMerchantId] = useState<string>(state.merchants[0]?.id ?? "");
+  const [merchantId, setMerchantId] = useState<string>(
+    expense?.merchantId ?? state.merchants[0]?.id ?? "",
+  );
   const [newMerchant, setNewMerchant] = useState("");
-  const [userId, setUserId] = useState(currentUser?.id ?? activeUsers[0]?.id ?? "");
-  const [amount, setAmount] = useState("");
-  const [paymentSource, setPaymentSource] = useState<ExpensePaymentSource>("common_account");
-  const [mealVoucherUserId, setMealVoucherUserId] = useState(currentUser?.id ?? "");
-  const [rule, setRule] = useState<BudgetSplitRule>({ mode: "prorata" });
-  const [date, setDate] = useState(todayIso());
-  const [budgetId, setBudgetId] = useState(state.budgets.find((b) => b.active)?.id ?? "");
-  const [note, setNote] = useState("");
+  const [userId, setUserId] = useState(expense?.userId ?? currentUser?.id ?? activeUsers[0]?.id ?? "");
+  const [amount, setAmount] = useState(expense ? centsToInput(expense.amountCents) : "");
+  const [paymentSource, setPaymentSource] = useState<ExpensePaymentSource>(
+    expense?.paymentSource ?? "common_account",
+  );
+  const [mealVoucherUserId, setMealVoucherUserId] = useState(
+    expense?.mealVoucherUserId ?? currentUser?.id ?? "",
+  );
+  const [rule, setRule] = useState<BudgetSplitRule>(expense?.splitRule ?? { mode: "prorata" });
+  const [date, setDate] = useState(expense?.date ?? todayIso());
+  const [budgetId, setBudgetId] = useState(
+    expense?.budgetId ?? state.budgets.find((b) => b.active)?.id ?? "",
+  );
+  const [note, setNote] = useState(expense?.note ?? "");
 
   const amountCents = parseAmountToCents(amount);
   const splitValid =
@@ -41,7 +49,7 @@ export function ExpenseForm({ onDone }: { onDone: () => void }) {
       });
       finalMerchantId = created.id;
     }
-    const expense: Omit<Expense, "id" | "householdId" | "createdAt" | "updatedAt"> = {
+    const fields = {
       merchantId: finalMerchantId || undefined,
       userId,
       amountCents,
@@ -52,9 +60,19 @@ export function ExpenseForm({ onDone }: { onDone: () => void }) {
       date,
       budgetId: budgetId || undefined,
       note: note.trim() || undefined,
-      source: "manual",
     };
-    app.addExpense(expense);
+    if (expense) {
+      app.updateExpense(expense.id, fields);
+    } else {
+      app.addExpense({ ...fields, source: "manual" });
+    }
+    onDone();
+  }
+
+  function remove() {
+    if (!expense) return;
+    if (typeof window !== "undefined" && !window.confirm("Supprimer cette dépense ?")) return;
+    app.removeExpense(expense.id);
     onDone();
   }
 
@@ -134,7 +152,7 @@ export function ExpenseForm({ onDone }: { onDone: () => void }) {
             .filter((b) => b.active)
             .map((b) => (
               <option key={b.id} value={b.id}>
-                {b.icon} {b.name}
+                {b.name}
               </option>
             ))}
         </Select>
@@ -154,8 +172,14 @@ export function ExpenseForm({ onDone }: { onDone: () => void }) {
       </Field>
 
       <button type="button" className="btn-primary w-full" disabled={!canSave} onClick={save}>
-        Ajouter la dépense
+        {expense ? "Enregistrer" : "Ajouter la dépense"}
       </button>
+
+      {expense && (
+        <button type="button" className="btn-danger mt-2 w-full" onClick={remove}>
+          Supprimer la dépense
+        </button>
+      )}
     </div>
   );
 }

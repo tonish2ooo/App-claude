@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, BudgetTile, Card, EmptyState } from "@/components/ui/primitives";
+import { Amount, BudgetTile, Card, Chevron, EmptyState } from "@/components/ui/primitives";
+import { Sheet } from "@/components/ui/Sheet";
+import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { contributionSummaries } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
 
@@ -48,7 +50,9 @@ export default function ActivityPage() {
   const app = useAppState();
   const { state, currentMonth, activeUsers } = app;
   const [filter, setFilter] = useState<Filter>("all");
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
 
+  const editingExpense = state.expenses.find((e) => e.id === editingExpenseId);
   const userName = (id: string) => state.users.find((u) => u.id === id)?.firstName ?? "—";
   const merchantName = (id?: string) => state.merchants.find((m) => m.id === id)?.name ?? "Sans enseigne";
   const budgetName = (id?: string) => state.budgets.find((b) => b.id === id)?.name ?? "Sans budget";
@@ -147,10 +151,16 @@ export default function ActivityPage() {
           <Card>
             {filtered.map((item, i) => {
               const visual = KIND_VISUAL[item.kind];
+              const editable = item.kind === "expense" || item.kind === "meal_voucher";
               return (
                 <div key={item.id}>
                   {i > 0 && <div className="my-3 border-t border-surface-muted" />}
-                  <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={!editable}
+                    onClick={editable ? () => setEditingExpenseId(item.id) : undefined}
+                    className="flex w-full items-center gap-3 text-left disabled:cursor-default"
+                  >
                     <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{item.title}</p>
@@ -168,13 +178,24 @@ export default function ActivityPage() {
                     >
                       <Amount cents={item.amountCents} sign />
                     </p>
-                  </div>
+                    {editable && <Chevron />}
+                  </button>
                 </div>
               );
             })}
           </Card>
         )}
       </div>
+
+      <Sheet
+        open={editingExpenseId !== null}
+        onClose={() => setEditingExpenseId(null)}
+        title="Modifier la dépense"
+      >
+        {editingExpense && (
+          <ExpenseForm expense={editingExpense} onDone={() => setEditingExpenseId(null)} />
+        )}
+      </Sheet>
     </div>
   );
 }

@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
-import { Amount, BudgetTile, Card, EmptyState, RingProgress, SectionTitle } from "@/components/ui/primitives";
+import { Amount, BudgetTile, Card, Chevron, EmptyState, RingProgress, SectionTitle } from "@/components/ui/primitives";
 import { tileColorFor } from "@/components/ui/budgetColor";
 import { Sheet } from "@/components/ui/Sheet";
 import { BudgetForm } from "@/components/forms/BudgetForm";
+import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { getMonthlyBudgetAmount } from "@/lib/calc/budget";
 import { budgetContributions } from "@/lib/calc/contributions";
 import { spentForBudget } from "@/lib/calc/expenses";
@@ -26,8 +27,10 @@ export default function BudgetDetailPage() {
   const params = useParams();
   const id = String(params.id);
   const [editing, setEditing] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
 
   const budget = state.budgets.find((b) => b.id === id);
+  const editingExpense = state.expenses.find((e) => e.id === editingExpenseId);
 
   const data = useMemo(() => {
     if (!budget) return null;
@@ -182,15 +185,20 @@ export default function BudgetDetailPage() {
           data.expenses.map((e, i) => (
             <div key={e.id}>
               {i > 0 && <div className="my-3 border-t border-surface-muted" />}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{merchantName(e.merchantId)}</p>
+              <button
+                type="button"
+                onClick={() => setEditingExpenseId(e.id)}
+                className="flex w-full items-center gap-3 text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{merchantName(e.merchantId)}</p>
                   <p className="text-xs text-ink-muted">
                     {e.date} · {e.paymentSource === "meal_voucher" ? "Tickets resto" : "Compte commun"}
                   </p>
                 </div>
-                <p className="font-semibold">{formatCents(e.amountCents)}</p>
-              </div>
+                <p className="shrink-0 font-semibold">{formatCents(e.amountCents)}</p>
+                <Chevron />
+              </button>
             </div>
           ))
         )}
@@ -218,6 +226,16 @@ export default function BudgetDetailPage() {
 
       <Sheet open={editing} onClose={() => setEditing(false)} title="Modifier le budget">
         <BudgetForm budget={budget} onDone={() => setEditing(false)} />
+      </Sheet>
+
+      <Sheet
+        open={editingExpenseId !== null}
+        onClose={() => setEditingExpenseId(null)}
+        title="Modifier la dépense"
+      >
+        {editingExpense && (
+          <ExpenseForm expense={editingExpense} onDone={() => setEditingExpenseId(null)} />
+        )}
       </Sheet>
     </div>
   );
