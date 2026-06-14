@@ -23,6 +23,7 @@ import {
 } from "@/lib/types";
 import { loadState, saveState } from "@/lib/storage/localState";
 import { buildDemoState, buildEmptyState } from "@/lib/seed/demo";
+import { buildPresetBudgets } from "@/lib/seed/budgets";
 import { generateMonthlyAnnualBudgetProvisions } from "@/lib/calc/provisions";
 import { makeId } from "@/lib/id";
 import { todayIso } from "@/lib/date";
@@ -58,6 +59,8 @@ interface AppStateApi {
   duplicatePreviousMonthIncomes: (month: Month) => void;
 
   addBudget: (budget: Omit<Budget, "id" | "householdId" | "createdAt" | "updatedAt">) => Budget;
+  /** Ajoute les budgets par défaut du foyer (sans dupliquer ceux déjà présents). */
+  loadPresetBudgets: () => void;
   updateBudget: (id: string, patch: Partial<Budget>) => void;
   removeBudget: (id: string) => void;
   toggleBudget: (id: string) => void;
@@ -250,6 +253,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         update((prev) => ({ ...prev, budgets: [...prev.budgets, created] }));
         return created;
       },
+      loadPresetBudgets: () =>
+        update((prev) => {
+          const presets = buildPresetBudgets(prev.household.id, now());
+          const existingIds = new Set(prev.budgets.map((b) => b.id));
+          const existingNames = new Set(prev.budgets.map((b) => b.name.toLowerCase()));
+          const toAdd = presets.filter(
+            (b) => !existingIds.has(b.id) && !existingNames.has(b.name.toLowerCase()),
+          );
+          return { ...prev, budgets: [...prev.budgets, ...toAdd] };
+        }),
       updateBudget: (id, patch) =>
         update((prev) => ({
           ...prev,

@@ -2,6 +2,7 @@ import { currentMonth, previousMonth, todayIso } from "../date";
 import { generateMonthlyAnnualBudgetProvisions } from "../calc/provisions";
 import { makeId } from "../id";
 import { APP_STATE_VERSION, type LocalAppState } from "../types";
+import { buildPresetBudgets } from "./budgets";
 
 /**
  * Construit un état de démonstration cohérent.
@@ -80,67 +81,7 @@ export function buildDemoState(): LocalAppState {
     },
   ];
 
-  const budgets: LocalAppState["budgets"] = [
-    {
-      id: "budget_courses",
-      householdId,
-      name: "Courses",
-      amountCents: 60000,
-      type: "monthly",
-      icon: "🛒",
-      active: true,
-      order: 1,
-      splitRule: { mode: "prorata" },
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "budget_loyer",
-      householdId,
-      name: "Loyer",
-      amountCents: 110000,
-      type: "monthly",
-      icon: "🏠",
-      active: true,
-      order: 2,
-      splitRule: { mode: "prorata" },
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "budget_assurance",
-      householdId,
-      name: "Assurance voiture",
-      amountCents: 120000,
-      type: "annual",
-      icon: "🚗",
-      active: true,
-      order: 3,
-      splitRule: { mode: "prorata" },
-      notes: "Prélèvement annuel en septembre",
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "budget_epargne",
-      householdId,
-      name: "Épargne projet",
-      amountCents: 30000,
-      type: "savings",
-      icon: "🐷",
-      active: true,
-      order: 4,
-      splitRule: {
-        mode: "custom",
-        shares: [
-          { userId: u1, percent: 50 },
-          { userId: u2, percent: 50 },
-        ],
-      },
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
+  const budgets: LocalAppState["budgets"] = buildPresetBudgets(householdId, now);
 
   const merchants: LocalAppState["merchants"] = [
     {

@@ -23,6 +23,7 @@ export function Onboarding() {
       active: true,
     });
     app.setCurrentUser(user.id);
+    app.loadPresetBudgets();
     app.completeOnboarding();
   }
 

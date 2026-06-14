@@ -99,6 +99,16 @@ export default function BudgetsPage() {
         {filter === "all" ? "Tous les budgets" : TABS.find((t) => t.value === filter)?.label}
       </SectionTitle>
 
+      {state.budgets.length === 0 && (
+        <button
+          type="button"
+          className="btn-ghost w-full"
+          onClick={() => app.loadPresetBudgets()}
+        >
+          Charger la liste de budgets par défaut
+        </button>
+      )}
+
       <Card>
         {filtered.length === 0 ? (
           <EmptyState icon="📊" title="Aucun budget" hint="Créez votre premier budget." />
