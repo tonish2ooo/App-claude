@@ -4,6 +4,25 @@
 
 :root {
   color-scheme: light;
+  /* Triplets RGB (sans rgb()) pour supporter les modificateurs d'opacité Tailwind. */
+  --surface: 255 255 255;
+  --surface-subtle: 242 242 247;
+  --surface-muted: 229 229 234;
+  --ink: 0 0 0;
+  --ink-soft: 60 60 67;
+  --ink-muted: 142 142 147;
+  --ink-faint: 199 199 204;
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: 28 28 30;
+  --surface-subtle: 0 0 0;
+  --surface-muted: 44 44 46;
+  --ink: 255 255 255;
+  --ink-soft: 209 209 214;
+  --ink-muted: 152 152 159;
+  --ink-faint: 72 72 74;
 }
 
 html,

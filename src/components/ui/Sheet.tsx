@@ -37,7 +37,7 @@ export function Sheet({
       aria-label={title}
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
     >
-      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative mx-auto flex max-h-[92dvh] w-full max-w-app flex-col rounded-t-3xl bg-surface shadow-card sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-surface-muted px-4 py-3">
           <h3 className="text-base font-semibold">{title}</h3>

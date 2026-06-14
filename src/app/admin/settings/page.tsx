@@ -5,6 +5,7 @@ import { useAppState } from "@/state/AppStateContext";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { Card } from "@/components/ui/primitives";
 import { Field, Segmented, TextInput } from "@/components/ui/fields";
+import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { todayIso } from "@/lib/date";
 import type { AppMode } from "@/lib/types";
 
@@ -78,6 +79,13 @@ export default function AdminSettingsPage() {
           contributions du mois (hors tickets restaurant) moins les dépenses
           payées depuis le compte commun.
         </p>
+      </Card>
+
+      <Card className="space-y-2">
+        <p className="text-sm font-medium">Apparence</p>
+        <Field label="Thème">
+          <ThemeToggle />
+        </Field>
       </Card>
 
       <Card className="space-y-2">

@@ -100,7 +100,7 @@ export default function DashboardPage() {
               <p className="text-[13px] text-ink-muted">Restant ce mois</p>
               <p
                 className="mt-0.5 text-[32px] font-bold leading-none tracking-tight"
-                style={{ color: summary.remainingBudgetCents >= 0 ? "#000" : "#ff3b30" }}
+                style={{ color: summary.remainingBudgetCents >= 0 ? "rgb(var(--ink))" : "#ff3b30" }}
               >
                 <Amount cents={summary.remainingBudgetCents} />
               </p>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
               </div>
               <p
                 className="mt-0.5 text-2xl font-bold tracking-tight"
-                style={{ color: summary.commonBalanceCents < 0 ? "#ff3b30" : "#000" }}
+                style={{ color: summary.commonBalanceCents < 0 ? "#ff3b30" : "rgb(var(--ink))" }}
               >
                 <Amount cents={summary.commonBalanceCents} />
                 <span className="text-sm font-normal text-ink-muted">

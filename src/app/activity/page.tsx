@@ -172,7 +172,7 @@ export default function ActivityPage() {
                     </div>
                     <p
                       className="shrink-0 font-semibold"
-                      style={{ color: item.amountCents >= 0 ? "#34c759" : "#000" }}
+                      style={{ color: item.amountCents >= 0 ? "#34c759" : "rgb(var(--ink))" }}
                     >
                       <Amount cents={item.amountCents} sign />
                     </p>

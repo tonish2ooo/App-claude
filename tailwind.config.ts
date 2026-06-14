@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
@@ -16,10 +17,10 @@ const config: Config = {
       },
       colors: {
         ink: {
-          DEFAULT: "#000000",
-          soft: "#3c3c43",
-          muted: "#8e8e93",
-          faint: "#c7c7cc",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          muted: "rgb(var(--ink-muted) / <alpha-value>)",
+          faint: "rgb(var(--ink-faint) / <alpha-value>)",
         },
         brand: {
           50: "#e5f2ff",
@@ -34,9 +35,9 @@ const config: Config = {
           soft: "#ffe5eb",
         },
         surface: {
-          DEFAULT: "#ffffff",
-          subtle: "#f2f2f7",
-          muted: "#e5e5ea",
+          DEFAULT: "rgb(var(--surface) / <alpha-value>)",
+          subtle: "rgb(var(--surface-subtle) / <alpha-value>)",
+          muted: "rgb(var(--surface-muted) / <alpha-value>)",
         },
         ok: "#34c759",
         warn: "#ff9500",
