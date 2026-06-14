@@ -113,19 +113,22 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="sticky bottom-0 z-30 mt-auto bg-surface/90 backdrop-blur-xl">
+      <nav
+        className="sticky bottom-0 z-30 mt-auto bg-surface/90 backdrop-blur-xl"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         <div className="mx-auto grid max-w-app grid-cols-5 items-center border-t border-surface-muted/60">
           {LEFT.map(item)}
 
-          {/* Centre — bouton + intégré */}
-          <div className="flex flex-col items-center pb-1 pt-2">
+          {/* Centre — bouton + intégré, surélevé pour rester facile à toucher */}
+          <div className="flex flex-col items-center">
             <button
               type="button"
-              aria-label="Actions rapides"
+              aria-label="Ajouter"
               onClick={() => setAction("menu")}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-fab transition active:scale-95"
+              className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-fab ring-4 ring-surface transition active:scale-95"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="h-6 w-6">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" className="h-7 w-7">
                 <path d="M12 5v14M5 12h14" strokeLinecap="round" />
               </svg>
             </button>

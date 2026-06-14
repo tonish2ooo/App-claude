@@ -78,6 +78,12 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
 
   return (
     <div>
+      {activeUsers.length === 0 && (
+        <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-warn">
+          Ajoutez d'abord un utilisateur (Profil → Utilisateurs) pour pouvoir enregistrer une dépense.
+        </p>
+      )}
+
       {!incomeComplete && rule.mode === "prorata" && (
         <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-warn">
           Les revenus du mois ne sont pas déclarés : la répartition au prorata peut être imprécise.
