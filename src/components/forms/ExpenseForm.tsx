@@ -26,7 +26,12 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
     expense?.mealVoucherUserId ?? currentUser?.id ?? "",
   );
   const [rule, setRule] = useState<BudgetSplitRule>(expense?.splitRule ?? { mode: "prorata" });
-  const [date, setDate] = useState(expense?.date ?? todayIso());
+  // Par défaut, la dépense est datée dans le mois actuellement affiché : ainsi
+  // une dépense ajoutée apparaît toujours dans la vue où on se trouve (et pas
+  // dans le mois du jour si on consulte un autre mois).
+  const today = todayIso();
+  const defaultDate = expense?.date ?? (today.startsWith(currentMonth) ? today : `${currentMonth}-15`);
+  const [date, setDate] = useState(defaultDate);
   const [budgetId, setBudgetId] = useState(
     expense?.budgetId ?? state.budgets.find((b) => b.active)?.id ?? "",
   );
