@@ -6,13 +6,20 @@ import { AppFrame } from "@/components/layout/AppFrame";
 export const metadata: Metadata = {
   title: "Comptes du foyer",
   description: "Pilotage mensuel des comptes du foyer",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Foyer",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#4f46e5",
+  viewportFit: "cover",
+  themeColor: "#007aff",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
