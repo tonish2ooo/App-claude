@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
-import { Avatar, Card, Chevron, EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
+import { Avatar, BudgetTile, Card, Chevron, EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
+import { tileColorFor } from "@/components/ui/budgetColor";
 import { Sheet } from "@/components/ui/Sheet";
 import { MerchantForm } from "@/components/forms/MerchantForm";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
-import { computeMerchantStats } from "@/lib/calc/merchants";
+import { computeMerchantInsights } from "@/lib/calc/merchants";
 import { geocodeAddress } from "@/lib/geo";
 import { formatCents } from "@/lib/money";
 import { formatDateLabel } from "@/lib/date";
@@ -38,11 +39,11 @@ export default function MerchantDetailPage() {
 
   const merchant = state.merchants.find((m) => m.id === id);
 
-  const { stats, history } = useMemo(() => {
+  const { insights, history } = useMemo(() => {
     const linked = state.expenses
       .filter((e) => e.merchantId === id)
       .sort((a, b) => b.date.localeCompare(a.date));
-    return { stats: computeMerchantStats(id, state.expenses), history: linked };
+    return { insights: computeMerchantInsights(id, state.expenses), history: linked };
   }, [state.expenses, id]);
 
   if (!merchant) {
@@ -64,6 +65,18 @@ export default function MerchantDetailPage() {
   const osmEmbed = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}&layer=mapnik&marker=${lat}%2C${lng}`;
   const mapsQuery = hasGeo ? `${lat},${lng}` : encodeURIComponent(merchant.address ?? "");
   const mapsLink = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+  const topBudget = insights.topBudgetId
+    ? state.budgets.find((b) => b.id === insights.topBudgetId)
+    : undefined;
+  const freqLabel =
+    insights.avgDaysBetween === null
+      ? "—"
+      : insights.avgDaysBetween < 1
+      ? "Quotidien"
+      : `~${Math.round(insights.avgDaysBetween)} j`;
+  const paymentTotal = insights.commonAccountCents + insights.mealVoucherCents;
+  const commonPct = paymentTotal > 0 ? insights.commonAccountCents / paymentTotal : 1;
 
   async function locateAddress() {
     if (!merchant?.address) return;
@@ -158,30 +171,105 @@ export default function MerchantDetailPage() {
         </Card>
       </div>
 
-      {/* Statistiques */}
+      {/* Statistiques — tableau de bord */}
       <SectionTitle>Statistiques</SectionTitle>
-      <div className="grid grid-cols-2 gap-3">
+
+      {/* Total + budget principal */}
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[13px] text-ink-muted">Total dépensé ici</p>
+            <p className="mt-0.5 text-[28px] font-bold leading-none tracking-tight">
+              {formatCents(insights.totalAmountCents)}
+            </p>
+            <p className="mt-1 text-xs text-ink-muted">
+              {insights.expenseCount} visite{insights.expenseCount > 1 ? "s" : ""}
+              {insights.perMonthCents !== null && ` · ${formatCents(insights.perMonthCents)}/mois`}
+            </p>
+          </div>
+          {topBudget && (
+            <BudgetTile
+              icon={topBudget.icon}
+              bg={tileColorFor(topBudget.id).bg}
+              color={tileColorFor(topBudget.id).bar}
+              size={48}
+            />
+          )}
+        </div>
+      </Card>
+
+      {/* Tuiles d'indicateurs */}
+      <div className="mt-2 grid grid-cols-2 gap-3">
         <Card>
-          <p className="text-[11px] text-ink-muted">Dépenses</p>
-          <p className="mt-1 text-xl font-bold tracking-tight">{stats.expenseCount}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] text-ink-muted">Total dépensé</p>
-          <p className="mt-1 text-xl font-bold tracking-tight">{formatCents(stats.totalAmountCents)}</p>
-        </Card>
-        <Card>
-          <p className="text-[11px] text-ink-muted">Montant moyen</p>
+          <p className="text-[11px] text-ink-muted">Dépense moyenne</p>
           <p className="mt-1 text-xl font-bold tracking-tight">
-            {stats.averageAmountCents !== null ? formatCents(stats.averageAmountCents) : "—"}
+            {insights.averageAmountCents !== null ? formatCents(insights.averageAmountCents) : "—"}
           </p>
         </Card>
         <Card>
-          <p className="text-[11px] text-ink-muted">Dernière dépense</p>
+          <p className="text-[11px] text-ink-muted">Fréquence de visite</p>
+          <p className="mt-1 text-xl font-bold tracking-tight">{freqLabel}</p>
+          <p className="text-[11px] text-ink-muted">{insights.avgDaysBetween !== null ? "entre 2 visites" : ""}</p>
+        </Card>
+        <Card>
+          <p className="text-[11px] text-ink-muted">Plus grosse</p>
           <p className="mt-1 text-xl font-bold tracking-tight">
-            {stats.lastAmountCents !== null ? formatCents(stats.lastAmountCents) : "—"}
+            {insights.maxAmountCents !== null ? formatCents(insights.maxAmountCents) : "—"}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-[11px] text-ink-muted">Plus petite</p>
+          <p className="mt-1 text-xl font-bold tracking-tight">
+            {insights.minAmountCents !== null ? formatCents(insights.minAmountCents) : "—"}
           </p>
         </Card>
       </div>
+
+      {/* Budget principal */}
+      <div className="mt-2">
+        <Card>
+          <div className="flex items-center justify-between">
+            <p className="text-[13px] text-ink-muted">Budget principal</p>
+            {topBudget ? (
+              <span className="inline-flex items-center gap-2 font-semibold">
+                <BudgetTile
+                  icon={topBudget.icon}
+                  bg={tileColorFor(topBudget.id).bg}
+                  color={tileColorFor(topBudget.id).bar}
+                  size={24}
+                />
+                {topBudget.name}
+              </span>
+            ) : (
+              <span className="text-ink-muted">—</span>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Répartition du paiement */}
+      {insights.totalAmountCents > 0 && (
+        <div className="mt-2">
+          <Card>
+            <p className="text-[13px] text-ink-muted">Répartition du paiement</p>
+            <div className="mt-2 flex h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+              <div style={{ width: `${commonPct * 100}%`, background: "#007aff" }} />
+              <div style={{ width: `${(1 - commonPct) * 100}%`, background: "#32ade6" }} />
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span style={{ color: "#007aff" }}>Compte commun {formatCents(insights.commonAccountCents)}</span>
+              <span style={{ color: "#32ade6" }}>Tickets resto {formatCents(insights.mealVoucherCents)}</span>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Première / dernière visite */}
+      {insights.firstDate && insights.lastDate && (
+        <p className="px-1 pt-2 text-xs text-ink-muted">
+          Première visite le {formatDateLabel(insights.firstDate)} · dernière le {formatDateLabel(insights.lastDate)}
+        </p>
+      )}
 
       {/* Historique des dépenses */}
       <SectionTitle>Historique des dépenses</SectionTitle>
