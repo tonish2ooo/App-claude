@@ -104,39 +104,41 @@ export function buildDemoState(): LocalAppState {
     },
   ];
 
-  const expenses: LocalAppState["expenses"] = [
-    {
-      id: makeId("exp"),
-      householdId,
-      merchantId: "merchant_carrefour",
-      userId: u1,
-      amountCents: 8540,
-      currency: "EUR",
-      paymentSource: "common_account",
-      splitRule: { mode: "prorata" },
-      date: todayIso(),
-      budgetId: "budget_courses",
-      source: "manual",
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: makeId("exp"),
-      householdId,
-      merchantId: "merchant_resto",
-      userId: u2,
-      amountCents: 2400,
-      currency: "EUR",
-      paymentSource: "meal_voucher",
-      mealVoucherUserId: u2,
-      splitRule: { mode: "prorata" },
-      date: todayIso(),
-      budgetId: "budget_courses",
-      source: "manual",
-      createdAt: now,
-      updatedAt: now,
-    },
+  // Dépenses réelles de juin (colonne « Réel compte » du tableau), payées
+  // depuis le compte commun et rattachées aux budgets correspondants.
+  const realExpenses: Array<{ budgetId: string; amountCents: number; merchantId?: string }> = [
+    { budgetId: "budget_loyer", amountCents: 197563 },
+    { budgetId: "budget_assurance_solde", amountCents: 12012 },
+    { budgetId: "budget_courses", amountCents: 60802, merchantId: "merchant_carrefour" },
+    { budgetId: "budget_assurance_maison", amountCents: 6202 },
+    { budgetId: "budget_restaurant", amountCents: 13921, merchantId: "merchant_resto" },
+    { budgetId: "budget_boucherie", amountCents: 3556 },
+    { budgetId: "budget_voiture", amountCents: 76291 },
+    { budgetId: "budget_eau", amountCents: 4360 },
+    { budgetId: "budget_drink_market", amountCents: 8495 },
+    { budgetId: "budget_ecole", amountCents: 8700 },
+    { budgetId: "budget_galipettes", amountCents: 9350 },
+    { budgetId: "budget_charge_voiture", amountCents: 5502 },
+    { budgetId: "budget_verisure", amountCents: 5829 },
+    { budgetId: "budget_vetements", amountCents: 17690 },
+    { budgetId: "budget_autre", amountCents: 13219 },
   ];
+
+  const expenses: LocalAppState["expenses"] = realExpenses.map((e, i) => ({
+    id: makeId("exp"),
+    householdId,
+    merchantId: e.merchantId,
+    userId: i % 2 === 0 ? u1 : u2,
+    amountCents: e.amountCents,
+    currency: "EUR",
+    paymentSource: "common_account",
+    splitRule: { mode: "prorata" },
+    date: `${month}-${String((i % 26) + 2).padStart(2, "0")}`,
+    budgetId: e.budgetId,
+    source: "manual",
+    createdAt: now,
+    updatedAt: now,
+  }));
 
   const provisions = generateMonthlyAnnualBudgetProvisions({
     budgets,
