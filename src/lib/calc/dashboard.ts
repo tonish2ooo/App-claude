@@ -149,7 +149,8 @@ export function buildDashboardSummary(params: {
   );
   const mealVouchersGrantedCents = mvBalances.reduce((acc, b) => acc + b.grantedCents, 0);
   const commonSpent = spentFromCommonAccount(expenses, month);
-  const commonBalanceCents = contributionsTotalCents - mealVouchersGrantedCents - commonSpent;
+  const commonAccountTotalCents = contributionsTotalCents - mealVouchersGrantedCents;
+  const commonBalanceCents = commonAccountTotalCents - commonSpent;
   const commonBalanceStatus: MonthlyDashboardSummary["commonBalanceStatus"] =
     household.mode === "bank" ? "synced" : "estimated";
 
@@ -160,6 +161,7 @@ export function buildDashboardSummary(params: {
     spentTotalCents,
     remainingBudgetCents,
     commonBalanceCents,
+    commonAccountTotalCents,
     commonBalanceStatus,
     contributions,
     budgetProgress: budgetProgressForMonth(budgets, expenses, month),

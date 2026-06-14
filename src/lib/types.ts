@@ -273,6 +273,8 @@ export interface MonthlyDashboardSummary {
   remainingBudgetCents: Cents;
   /** Solde du compte commun (synchronisé / estimé / manuel). */
   commonBalanceCents: Cents;
+  /** Somme totale alimentant le compte commun ce mois (contributions − tickets restaurant). */
+  commonAccountTotalCents: Cents;
   commonBalanceStatus: "synced" | "estimated" | "manual";
   contributions: ContributionSummary[];
   budgetProgress: BudgetProgress[];

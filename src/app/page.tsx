@@ -40,6 +40,16 @@ export default function DashboardPage() {
     (acc, b) => acc + b.remainingCents,
     0,
   );
+  const mealVouchersTotalGranted = summary.mealVoucherBalances.reduce(
+    (acc, b) => acc + b.grantedCents,
+    0,
+  );
+  const mealVouchersRatio =
+    mealVouchersTotalGranted > 0 ? mealVouchersTotalRemaining / mealVouchersTotalGranted : 0;
+  const commonAccountRatio =
+    summary.commonAccountTotalCents > 0
+      ? summary.commonBalanceCents / summary.commonAccountTotalCents
+      : 0;
 
   const globalProgress =
     summary.budgetTotalCents > 0 ? summary.spentTotalCents / summary.budgetTotalCents : 0;
@@ -102,23 +112,33 @@ export default function DashboardPage() {
       {/* Solde compte commun */}
       <div className="mt-2">
         <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[13px] text-ink-muted">Compte commun</p>
+          <div className="flex items-center gap-4">
+            <RingProgress progress={commonAccountRatio} size={56} stroke={6} color="#007aff">
+              <span className="text-[10px] font-bold" style={{ color: "#007aff" }}>
+                {Math.round(commonAccountRatio * 100)}%
+              </span>
+            </RingProgress>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] text-ink-muted">Compte commun</p>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                  style={
+                    summary.commonBalanceStatus === "synced"
+                      ? { background: "#e8faf0", color: "#34c759" }
+                      : { background: "#f2f2f7", color: "#8e8e93" }
+                  }
+                >
+                  {summary.commonBalanceStatus === "synced" ? "Synchronisé" : "Estimé"}
+                </span>
+              </div>
               <p className="mt-0.5 text-2xl font-bold tracking-tight">
                 <Amount cents={summary.commonBalanceCents} />
+                <span className="text-sm font-normal text-ink-muted">
+                  {" "}/ {formatCents(summary.commonAccountTotalCents)}
+                </span>
               </p>
             </div>
-            <span
-              className="rounded-full px-2.5 py-1 text-xs font-semibold"
-              style={
-                summary.commonBalanceStatus === "synced"
-                  ? { background: "#e8faf0", color: "#34c759" }
-                  : { background: "#f2f2f7", color: "#8e8e93" }
-              }
-            >
-              {summary.commonBalanceStatus === "synced" ? "Synchronisé" : "Estimé"}
-            </span>
           </div>
         </Card>
       </div>
@@ -127,11 +147,19 @@ export default function DashboardPage() {
       {summary.mealVoucherBalances.length > 0 && (
         <div className="mt-2">
           <Card>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center gap-4">
+              <RingProgress progress={mealVouchersRatio} size={56} stroke={6} color="#32ade6">
+                <span className="text-[10px] font-bold" style={{ color: "#32ade6" }}>
+                  {Math.round(mealVouchersRatio * 100)}%
+                </span>
+              </RingProgress>
+              <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-ink-muted">Tickets restaurant</p>
                 <p className="mt-0.5 text-2xl font-bold tracking-tight" style={{ color: "#32ade6" }}>
                   <Amount cents={mealVouchersTotalRemaining} />
+                  <span className="text-sm font-normal text-ink-muted">
+                    {" "}/ {formatCents(mealVouchersTotalGranted)}
+                  </span>
                 </p>
               </div>
               <button
