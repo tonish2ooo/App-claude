@@ -117,7 +117,8 @@ export default function MerchantDetailPage() {
             </>
           ) : (
             <p className="mt-2 text-sm text-ink-muted">
-              Aucune position enregistrée. Ouvrez « Modifier » puis « Me localiser » sur place.
+              Aucune position enregistrée. Ouvrez « Modifier », saisissez l'adresse puis touchez
+              « Localiser l'adresse » (ou « Ma position » sur place).
             </p>
           )}
         </Card>
