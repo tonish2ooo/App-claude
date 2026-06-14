@@ -174,8 +174,8 @@ export default function DashboardPage() {
                   <p className="text-xs font-bold">{formatCents(c.contributionTotalCents)}</p>
                 </div>
                 <div className="rounded-xl bg-surface-subtle p-2 text-center">
-                  <p className="text-[10px] text-ink-muted">Reste argent</p>
-                  <p className="text-xs font-bold text-ok">{formatCents(c.remainingMoneyCents)}</p>
+                  <p className="text-[10px] text-ink-muted">Argent de poche</p>
+                  <p className="text-xs font-bold text-ok">{formatCents(c.remainingTotalCents)}</p>
                 </div>
                 <div className="rounded-xl bg-surface-subtle p-2 text-center">
                   <p className="text-[10px] text-ink-muted">Reste TR</p>

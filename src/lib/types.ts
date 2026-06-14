@@ -233,7 +233,7 @@ export interface ContributionSummary {
   incomeSharePct: number;
   /** Contribution totale aux budgets sur le mois. */
   contributionTotalCents: Cents;
-  /** Reste personnel total = revenu - contribution. */
+  /** Argent de poche = revenu total - contribution. */
   remainingTotalCents: Cents;
   /** Reste argent = salaire - part de contribution financée en argent. */
   remainingMoneyCents: Cents;
