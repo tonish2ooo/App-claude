@@ -13,6 +13,7 @@ const ICONS = [
   "car", "zap", "droplet", "cup", "backpack", "dumbbell",
   "wifi", "ev-plug", "lock", "shirt", "package", "star",
   "heart", "globe", "coffee", "plane", "wallet", "medical",
+  "piggy-bank", "landmark",
 ];
 
 export function BudgetForm({ onDone, budget }: { onDone: () => void; budget?: Budget }) {

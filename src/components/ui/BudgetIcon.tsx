@@ -187,6 +187,11 @@ const ICONS: Record<string, (p: IconProps) => ReactNode> = {
       <path d="M9 11h6M12 8v6" />
     </Svg>
   ),
+  landmark: ({ size, color }) => (
+    <Svg size={size} color={color}>
+      <path d="M3 21h18M4 10h16M12 3 4 7h16zM6 10v8M10 10v8M14 10v8M18 10v8" />
+    </Svg>
+  ),
 };
 
 /** Rendu d'une icône budget monochrome (SVG ligne fine). */
