@@ -5,6 +5,7 @@ import { useAppState } from "@/state/AppStateContext";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { LoginScreen } from "@/components/auth/LoginScreen";
+import { ThemeButton } from "@/components/settings/ThemeButton";
 import { Avatar } from "@/components/ui/primitives";
 
 export function AppFrame({ children }: { children: ReactNode }) {
@@ -36,7 +37,10 @@ export function AppFrame({ children }: { children: ReactNode }) {
           <p className="text-[13px] text-ink-muted">Bonjour</p>
           <p className="text-xl font-bold tracking-tight">{names}</p>
         </div>
-        <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} src={currentUser.photoUrl} size={38} />
+        <div className="flex items-center gap-1">
+          <ThemeButton />
+          <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} src={currentUser.photoUrl} size={38} />
+        </div>
       </header>
 
       <main className="flex-1 px-4 pb-28 pt-2">{children}</main>
