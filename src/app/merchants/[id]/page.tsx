@@ -13,6 +13,16 @@ import { geocodeAddress } from "@/lib/geo";
 import { formatCents } from "@/lib/money";
 import { formatDateLabel } from "@/lib/date";
 
+const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+function shortMonthLabel(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  if (!y || !m) return month;
+  return new Intl.DateTimeFormat("fr-FR", { month: "short" })
+    .format(new Date(y, m - 1, 1))
+    .replace(".", "");
+}
+
 const CATEGORY_LABEL: Record<string, string> = {
   alimentation: "Alimentation",
   restaurant: "Restaurant",
@@ -77,6 +87,8 @@ export default function MerchantDetailPage() {
       : `~${Math.round(insights.avgDaysBetween)} j`;
   const paymentTotal = insights.commonAccountCents + insights.mealVoucherCents;
   const commonPct = paymentTotal > 0 ? insights.commonAccountCents / paymentTotal : 1;
+  const recentMonthly = insights.monthly.slice(-6);
+  const maxMonthly = Math.max(...recentMonthly.map((d) => d.amountCents), 1);
 
   async function locateAddress() {
     if (!merchant?.address) return;
@@ -259,6 +271,34 @@ export default function MerchantDetailPage() {
             <div className="mt-1.5 flex items-center justify-between text-xs">
               <span style={{ color: "#007aff" }}>Compte commun {formatCents(insights.commonAccountCents)}</span>
               <span style={{ color: "#32ade6" }}>Tickets resto {formatCents(insights.mealVoucherCents)}</span>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Évolution mensuelle */}
+      {insights.monthly.length > 0 && (
+        <div className="mt-2">
+          <Card>
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-ink-muted">Évolution mensuelle</p>
+              {insights.topWeekday !== null && (
+                <span className="text-xs text-ink-muted">Surtout le {WEEKDAYS[insights.topWeekday]}</span>
+              )}
+            </div>
+            <div className="mt-3 flex h-24 items-end justify-between gap-2">
+              {recentMonthly.map((dpt) => (
+                <div key={dpt.month} className="flex flex-1 flex-col items-center gap-1">
+                  <div className="flex w-full items-end justify-center" style={{ height: 72 }}>
+                    <div
+                      className="w-full max-w-[26px] rounded-t-md bg-brand-600"
+                      style={{ height: `${Math.max(4, (dpt.amountCents / maxMonthly) * 72)}px` }}
+                      title={formatCents(dpt.amountCents)}
+                    />
+                  </div>
+                  <span className="text-[10px] capitalize text-ink-muted">{shortMonthLabel(dpt.month)}</span>
+                </div>
+              ))}
             </div>
           </Card>
         </div>

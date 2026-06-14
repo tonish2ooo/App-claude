@@ -25,6 +25,13 @@ describe("computeMerchantInsights", () => {
     expect(i.topBudgetId).toBe("b1");
     expect(i.commonAccountCents).toBe(4000);
     expect(i.mealVoucherCents).toBe(2000);
+    expect(i.monthly).toEqual([
+      { month: "2026-06", amountCents: 4000 },
+      { month: "2026-07", amountCents: 2000 },
+    ]);
+    expect(i.topWeekday).not.toBeNull();
+    expect(i.topWeekday).toBeGreaterThanOrEqual(0);
+    expect(i.topWeekday).toBeLessThanOrEqual(6);
   });
 
   it("gère une enseigne sans dépense", () => {

@@ -53,6 +53,10 @@ export interface MerchantInsights {
   commonAccountCents: Cents;
   /** Total payé en tickets restaurant. */
   mealVoucherCents: Cents;
+  /** Total dépensé par mois (ordre chronologique croissant). */
+  monthly: Array<{ month: string; amountCents: Cents }>;
+  /** Jour de la semaine le plus fréquent (0 = dimanche … 6 = samedi), ou null. */
+  topWeekday: number | null;
 }
 
 function daysBetween(a: string, b: string): number {
@@ -101,6 +105,31 @@ export function computeMerchantInsights(merchantId: string, expenses: Expense[])
     .reduce((acc, e) => acc + e.amountCents, 0);
   const mealVoucherCents = totalAmountCents - commonAccountCents;
 
+  // Total par mois (chronologique).
+  const byMonth = new Map<string, number>();
+  for (const e of linked) {
+    const m = e.date.slice(0, 7);
+    byMonth.set(m, (byMonth.get(m) ?? 0) + e.amountCents);
+  }
+  const monthly = [...byMonth.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([month, amountCents]) => ({ month, amountCents }));
+
+  // Jour de la semaine le plus fréquent.
+  const weekdayCounts = new Array(7).fill(0);
+  for (const e of linked) {
+    const d = new Date(`${e.date}T00:00:00`);
+    if (!Number.isNaN(d.getTime())) weekdayCounts[d.getDay()] += 1;
+  }
+  let topWeekday: number | null = null;
+  let topWeekdayCount = 0;
+  weekdayCounts.forEach((c, i) => {
+    if (c > topWeekdayCount) {
+      topWeekdayCount = c;
+      topWeekday = i;
+    }
+  });
+
   return {
     expenseCount,
     totalAmountCents,
@@ -115,6 +144,8 @@ export function computeMerchantInsights(merchantId: string, expenses: Expense[])
     topBudgetId,
     commonAccountCents,
     mealVoucherCents,
+    monthly,
+    topWeekday,
   };
 }
 
