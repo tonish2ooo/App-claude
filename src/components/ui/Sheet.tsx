@@ -50,7 +50,12 @@ export function Sheet({
             ✕
           </button>
         </div>
-        <div className="overflow-y-auto px-4 py-4">{children}</div>
+        <div
+          className="overflow-y-auto px-4 py-4"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
