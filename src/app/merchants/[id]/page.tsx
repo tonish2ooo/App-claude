@@ -8,6 +8,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { MerchantForm } from "@/components/forms/MerchantForm";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { computeMerchantStats } from "@/lib/calc/merchants";
+import { geocodeAddress } from "@/lib/geo";
 import { formatCents } from "@/lib/money";
 import { formatDateLabel } from "@/lib/date";
 
@@ -32,6 +33,8 @@ export default function MerchantDetailPage() {
   const id = String(params.id);
   const [editing, setEditing] = useState(false);
   const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geoError, setGeoError] = useState(false);
 
   const merchant = state.merchants.find((m) => m.id === id);
 
@@ -59,7 +62,21 @@ export default function MerchantDetailPage() {
   const lng = merchant.longitude ?? 0;
   const d = 0.004;
   const osmEmbed = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d}%2C${lat - d}%2C${lng + d}%2C${lat + d}&layer=mapnik&marker=${lat}%2C${lng}`;
-  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const mapsQuery = hasGeo ? `${lat},${lng}` : encodeURIComponent(merchant.address ?? "");
+  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+  async function locateAddress() {
+    if (!merchant?.address) return;
+    setGeocoding(true);
+    setGeoError(false);
+    const point = await geocodeAddress(merchant.address);
+    setGeocoding(false);
+    if (point) {
+      app.updateMerchant(merchant.id, { latitude: point.latitude, longitude: point.longitude });
+    } else {
+      setGeoError(true);
+    }
+  }
 
   return (
     <div className="space-y-1">
@@ -95,7 +112,7 @@ export default function MerchantDetailPage() {
         <Card>
           <div className="flex items-center justify-between">
             <p className="text-[13px] font-semibold">Localisation</p>
-            {hasGeo && (
+            {(hasGeo || merchant.address) && (
               <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-600">
                 Voir sur la carte
               </a>
@@ -115,9 +132,26 @@ export default function MerchantDetailPage() {
                 {lat.toFixed(5)}, {lng.toFixed(5)}
               </p>
             </>
+          ) : merchant.address ? (
+            <div className="mt-2">
+              <p className="text-sm text-ink-muted">Position pas encore calculée pour cette adresse.</p>
+              <button
+                type="button"
+                className="btn-primary mt-2 w-full"
+                onClick={locateAddress}
+                disabled={geocoding}
+              >
+                {geocoding ? "Recherche…" : "🗺️ Localiser cette adresse"}
+              </button>
+              {geoError && (
+                <p className="mt-1 text-xs text-danger">
+                  Adresse introuvable. Précisez-la (numéro, ville) dans « Modifier ».
+                </p>
+              )}
+            </div>
           ) : (
             <p className="mt-2 text-sm text-ink-muted">
-              Aucune position enregistrée. Ouvrez « Modifier », saisissez l'adresse puis touchez
+              Aucune adresse ni position. Ouvrez « Modifier » pour renseigner l'adresse, puis
               « Localiser l'adresse » (ou « Ma position » sur place).
             </p>
           )}
