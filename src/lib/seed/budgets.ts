@@ -34,9 +34,10 @@ const PRESETS: BudgetPreset[] = [
   { id: "budget_verisure",        name: "Verisure",                  amountCents: 5829,   type: "monthly", icon: "lock"      },
   { id: "budget_vetements",       name: "Vêtements Léonie",          amountCents: 10000,  type: "monthly", icon: "shirt"     },
   { id: "budget_autre",           name: "Autre",                     amountCents: 10000,  type: "monthly", icon: "package"   },
+  // Épargne mensuelle.
+  { id: "budget_epargne",         name: "Bourses",                   amountCents: 20000,  type: "savings", icon: "piggy-bank" },
   // Dépenses annuelles (provisionnées chaque mois).
   { id: "budget_vacances",        name: "Vacances",                  amountCents: 600000, type: "annual",  icon: "plane"      },
-  { id: "budget_epargne",         name: "Épargne",                   amountCents: 240000, type: "annual",  icon: "piggy-bank" },
   { id: "budget_cadastre",        name: "Cadastre",                  amountCents: 80800,  type: "annual",  icon: "landmark"   },
 ];
 

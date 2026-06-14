@@ -5,7 +5,6 @@ import { useAppState } from "@/state/AppStateContext";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { Card } from "@/components/ui/primitives";
 import { Field, Segmented, TextInput } from "@/components/ui/fields";
-import { centsToInput, parseAmountToCents } from "@/lib/money";
 import type { AppMode } from "@/lib/types";
 
 const MODE_LABEL: Record<AppMode, string> = { manual: "Manuel", bank: "Banque connectée", demo: "Démo" };
@@ -15,7 +14,6 @@ export default function AdminSettingsPage() {
   const { state } = app;
   const h = state.household;
   const [name, setName] = useState(h.name);
-  const [balance, setBalance] = useState(centsToInput(h.manualCommonBalanceCents ?? 0));
 
   return (
     <div className="space-y-3">
@@ -45,16 +43,11 @@ export default function AdminSettingsPage() {
           />
         </Field>
 
-        {h.mode !== "bank" && (
-          <Field label="Solde manuel du compte commun" hint="Utilisé pour estimer le solde sans connexion bancaire">
-            <TextInput
-              inputMode="decimal"
-              value={balance}
-              onChange={(e) => setBalance(e.target.value)}
-              onBlur={() => app.updateHousehold({ manualCommonBalanceCents: parseAmountToCents(balance) })}
-            />
-          </Field>
-        )}
+        <p className="px-1 pt-1 text-xs text-ink-muted">
+          Le solde du compte commun est calculé automatiquement : total des
+          contributions du mois (hors tickets restaurant) moins les dépenses
+          payées depuis le compte commun.
+        </p>
       </Card>
 
       <Card className="space-y-2">

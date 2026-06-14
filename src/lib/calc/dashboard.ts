@@ -137,11 +137,18 @@ export function buildDashboardSummary(params: {
   const spentTotalCents = spentTotalForMonth(expenses, month);
   const remainingBudgetCents = budgetTotalCents - spentTotalCents;
 
+  const contributions = contributionSummaries(budgets, activeUsers, incomes, expenses, month);
+
+  // Solde du compte commun = total des contributions (en argent, hors tickets
+  // restaurant) − ce qui a été dépensé depuis le compte commun sur le mois.
+  const contributionsTotalCents = contributions.reduce(
+    (acc, c) => acc + c.contributionTotalCents,
+    0,
+  );
   const commonSpent = spentFromCommonAccount(expenses, month);
-  const manualBalance = household.manualCommonBalanceCents ?? 0;
-  const commonBalanceCents = manualBalance - commonSpent;
+  const commonBalanceCents = contributionsTotalCents - commonSpent;
   const commonBalanceStatus: MonthlyDashboardSummary["commonBalanceStatus"] =
-    household.mode === "bank" ? "synced" : commonSpent > 0 ? "estimated" : "manual";
+    household.mode === "bank" ? "synced" : "estimated";
 
   return {
     month,
@@ -151,7 +158,7 @@ export function buildDashboardSummary(params: {
     remainingBudgetCents,
     commonBalanceCents,
     commonBalanceStatus,
-    contributions: contributionSummaries(budgets, activeUsers, incomes, expenses, month),
+    contributions,
     budgetProgress: budgetProgressForMonth(budgets, expenses, month),
     mealVoucherBalances: mealVoucherBalances(activeUsers, incomes, expenses, month),
     missingIncomeUserIds: usersMissingIncome(incomes, activeUsers, month),
