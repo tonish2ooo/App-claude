@@ -19,12 +19,12 @@ interface ActivityItem {
   badge: { label: string; color: string; bg: string };
 }
 
-const KIND_VISUAL: Record<Exclude<Filter, "all">, { icon: string; bg: string }> = {
-  expense: { icon: "🧾", bg: "#f2f2f7" },
-  income: { icon: "💰", bg: "#e8faf0" },
-  contribution: { icon: "🤝", bg: "#f0eeff" },
-  provision: { icon: "🔁", bg: "#fff4e0" },
-  meal_voucher: { icon: "🍽️", bg: "#e4f5fb" },
+const KIND_VISUAL: Record<Exclude<Filter, "all">, { icon: string; bg: string; color: string }> = {
+  expense:      { icon: "package",  bg: "#f2f2f7", color: "#8e8e93" },
+  income:       { icon: "wallet",   bg: "#e8faf0", color: "#34c759" },
+  contribution: { icon: "heart",    bg: "#f0eeff", color: "#5856d6" },
+  provision:    { icon: "bank",     bg: "#fff4e0", color: "#ff9500" },
+  meal_voucher: { icon: "utensils", bg: "#e4f5fb", color: "#32ade6" },
 };
 
 const BADGE: Record<Exclude<Filter, "all">, { label: string; color: string; bg: string }> = {
@@ -151,7 +151,7 @@ export default function ActivityPage() {
                 <div key={item.id}>
                   {i > 0 && <div className="my-3 border-t border-surface-muted" />}
                   <div className="flex items-center gap-3">
-                    <BudgetTile icon={visual.icon} bg={visual.bg} size={40} />
+                    <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{item.title}</p>
                       <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { formatCents } from "@/lib/money";
+import { BudgetIcon } from "@/components/ui/BudgetIcon";
 
 export function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
@@ -119,22 +120,26 @@ export function ProgressBar({
   );
 }
 
-/** Tuile colorée contenant le pictogramme d'un budget. */
+/** Tuile colorée contenant le pictogramme d'un budget (icône SVG monochrome). */
 export function BudgetTile({
   icon,
   bg,
+  color,
   size = 44,
 }: {
   icon: string;
   bg: string;
+  /** Couleur de l'icône SVG (bar color du budget). */
+  color?: string;
   size?: number;
 }) {
+  const iconSize = Math.round(size * 0.52);
   return (
     <div
-      className="flex items-center justify-center rounded-2xl shrink-0"
-      style={{ width: size, height: size, background: bg, fontSize: size * 0.45 }}
+      className="flex shrink-0 items-center justify-center rounded-2xl"
+      style={{ width: size, height: size, background: bg }}
     >
-      {icon}
+      <BudgetIcon name={icon} size={iconSize} color={color ?? "#007aff"} />
     </div>
   );
 }

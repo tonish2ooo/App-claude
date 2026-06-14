@@ -4,10 +4,16 @@ import { useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { Field, Segmented, TextArea, TextInput } from "@/components/ui/fields";
 import { SplitEditor } from "@/components/forms/SplitEditor";
+import { BudgetIcon } from "@/components/ui/BudgetIcon";
 import { centsToInput, formatCents, parseAmountToCents } from "@/lib/money";
 import type { Budget, BudgetSplitRule, BudgetType } from "@/lib/types";
 
-const ICONS = ["🛒", "🏠", "🚗", "🐷", "💡", "📱", "🍽️", "🎬", "🏥", "✈️", "👕", "📦"];
+const ICONS = [
+  "home", "shield", "bank", "cart", "utensils", "knife",
+  "car", "zap", "droplet", "cup", "backpack", "dumbbell",
+  "wifi", "ev-plug", "lock", "shirt", "package", "star",
+  "heart", "globe", "coffee", "plane", "wallet", "medical",
+];
 
 export function BudgetForm({ onDone, budget }: { onDone: () => void; budget?: Budget }) {
   const app = useAppState();
@@ -16,7 +22,7 @@ export function BudgetForm({ onDone, budget }: { onDone: () => void; budget?: Bu
   const [name, setName] = useState(budget?.name ?? "");
   const [amount, setAmount] = useState(budget ? centsToInput(budget.amountCents) : "");
   const [type, setType] = useState<BudgetType>(budget?.type ?? "monthly");
-  const [icon, setIcon] = useState(budget?.icon ?? "📦");
+  const [icon, setIcon] = useState(budget?.icon ?? "package");
   const [rule, setRule] = useState<BudgetSplitRule>(budget?.splitRule ?? { mode: "prorata" });
   const [notes, setNotes] = useState(budget?.notes ?? "");
 
@@ -54,17 +60,23 @@ export function BudgetForm({ onDone, budget }: { onDone: () => void; budget?: Bu
 
       <Field label="Pictogramme">
         <div className="flex flex-wrap gap-2">
-          {ICONS.map((i) => (
+          {ICONS.map((name) => (
             <button
-              key={i}
+              key={name}
               type="button"
-              onClick={() => setIcon(i)}
+              onClick={() => setIcon(name)}
               className={
-                "flex h-10 w-10 items-center justify-center rounded-xl text-lg " +
-                (icon === i ? "bg-brand-100 ring-2 ring-brand-500" : "bg-surface-muted")
+                "flex h-10 w-10 items-center justify-center rounded-xl transition " +
+                (icon === name
+                  ? "bg-brand-50 ring-2 ring-brand-600"
+                  : "bg-surface-subtle")
               }
             >
-              {i}
+              <BudgetIcon
+                name={name}
+                size={20}
+                color={icon === name ? "#007aff" : "#8e8e93"}
+              />
             </button>
           ))}
         </div>

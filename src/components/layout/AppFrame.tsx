@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { QuickActions } from "@/components/layout/QuickActions";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { LoginScreen } from "@/components/auth/LoginScreen";
 import { Avatar } from "@/components/ui/primitives";
@@ -42,7 +41,6 @@ export function AppFrame({ children }: { children: ReactNode }) {
 
       <main className="flex-1 px-4 pb-28 pt-2">{children}</main>
 
-      <QuickActions />
       <BottomNav />
     </div>
   );

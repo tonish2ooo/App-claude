@@ -100,7 +100,7 @@ export default function BudgetDetailPage() {
             </RingProgress>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <BudgetTile icon={budget.icon} bg={color.bg} size={32} />
+                <BudgetTile icon={budget.icon} bg={color.bg} color={color.bar} size={32} />
                 <h1 className="text-lg font-bold">{budget.name}</h1>
               </div>
               <p className="mt-1 text-[13px] text-ink-muted">{TYPE_LABEL[budget.type]}</p>

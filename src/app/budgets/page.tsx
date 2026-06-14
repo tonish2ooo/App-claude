@@ -134,7 +134,7 @@ export default function BudgetsPage() {
                   onClick={() => router.push(`/budgets/${budget.id}`)}
                   className="flex w-full items-center gap-3 text-left"
                 >
-                  <BudgetTile icon={budget.icon} bg={color.bg} size={40} />
+                  <BudgetTile icon={budget.icon} bg={color.bg} color={color.bar} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate font-medium">{budget.name}</p>
