@@ -22,6 +22,7 @@ import {
   type UserProfile,
 } from "@/lib/types";
 import { loadState, saveState } from "@/lib/storage/localState";
+import { migrateState } from "@/lib/storage/migrations";
 import { buildDemoState, buildEmptyState } from "@/lib/seed/demo";
 import { buildPresetBudgets } from "@/lib/seed/budgets";
 import { generateMonthlyAnnualBudgetProvisions } from "@/lib/calc/provisions";
@@ -37,6 +38,8 @@ interface AppStateApi {
 
   loadDemo: () => void;
   resetEmpty: () => void;
+  /** Remplace l'état courant par des données importées (JSON). Renvoie false si invalide. */
+  importState: (raw: unknown) => boolean;
 
   updateHousehold: (patch: Partial<Household>) => void;
   setCurrentMonth: (month: Month) => void;
@@ -129,6 +132,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
       loadDemo: () => setState(withRegeneratedProvisions(buildDemoState())),
       resetEmpty: () => setState(withRegeneratedProvisions(buildEmptyState())),
+      importState: (raw) => {
+        const migrated = migrateState(raw);
+        if (!migrated) return false;
+        setState(withRegeneratedProvisions(migrated));
+        return true;
+      },
 
       updateHousehold: (patch) =>
         update((prev) => ({
