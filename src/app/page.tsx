@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const app = useAppState();
   const { state, currentMonth, activeUsers } = app;
   const [incomeUserId, setIncomeUserId] = useState<string | null>(null);
+  const [showMealDetails, setShowMealDetails] = useState(false);
   const router = useRouter();
 
   const summary = useMemo(
@@ -34,6 +35,11 @@ export default function DashboardPage() {
 
   const budgets = activeBudgets(state.budgets);
   const userName = (id: string) => state.users.find((x) => x.id === id)?.firstName ?? "—";
+
+  const mealVouchersTotalRemaining = summary.mealVoucherBalances.reduce(
+    (acc, b) => acc + b.remainingCents,
+    0,
+  );
 
   const globalProgress =
     summary.budgetTotalCents > 0 ? summary.spentTotalCents / summary.budgetTotalCents : 0;
@@ -117,36 +123,41 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Tickets restaurant */}
+      {/* Solde total tickets restaurant + détail par utilisateur */}
       {summary.mealVoucherBalances.length > 0 && (
-        <>
-          <SectionTitle>Tickets restaurant</SectionTitle>
+        <div className="mt-2">
           <Card>
-            {summary.mealVoucherBalances.map((b, i) => {
-              const used = b.grantedCents > 0 ? b.spentCents / b.grantedCents : 0;
-              const mealColor = used > 0.9 ? "#ff3b30" : used >= 0.7 ? "#ff9500" : "#32ade6";
-              return (
-                <div key={b.userId}>
-                  {i > 0 && <div className="my-3 border-t border-surface-muted" />}
-                  <div className="flex items-center gap-3">
-                    <RingProgress progress={used} size={52} stroke={5} color={mealColor}>
-                      <span className="text-[9px] font-bold" style={{ color: mealColor }}>
-                        {Math.round(used * 100)}%
-                      </span>
-                    </RingProgress>
-                    <div className="flex-1">
-                      <p className="text-[13px] font-semibold">{userName(b.userId)}</p>
-                      <p className="text-sm font-bold" style={{ color: mealColor }}>
-                        <Amount cents={b.remainingCents} /> restants
-                      </p>
-                      <p className="text-xs text-ink-muted">sur {formatCents(b.grantedCents)}</p>
-                    </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[13px] text-ink-muted">Tickets restaurant</p>
+                <p className="mt-0.5 text-2xl font-bold tracking-tight" style={{ color: "#32ade6" }}>
+                  <Amount cents={mealVouchersTotalRemaining} />
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMealDetails((v) => !v)}
+                className="text-sm font-medium text-brand-600"
+              >
+                {showMealDetails ? "Masquer" : "Détails"}
+              </button>
+            </div>
+
+            {showMealDetails && (
+              <div className="mt-3 space-y-2 border-t border-surface-muted pt-3">
+                {summary.mealVoucherBalances.map((b) => (
+                  <div key={b.userId} className="flex items-center justify-between">
+                    <span className="text-sm">{userName(b.userId)}</span>
+                    <span className="text-sm font-semibold" style={{ color: "#32ade6" }}>
+                      <Amount cents={b.remainingCents} />
+                      <span className="font-normal text-ink-muted"> / {formatCents(b.grantedCents)}</span>
+                    </span>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </Card>
-        </>
+        </div>
       )}
 
       {/* Par utilisateur */}
