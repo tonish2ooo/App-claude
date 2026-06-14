@@ -81,7 +81,7 @@ export function SplitEditor({
                     max={100}
                     value={percent}
                     onChange={(e) => setPercent(user.id, Number(e.target.value))}
-                    className="w-16 rounded-lg border border-slate-200 px-2 py-1 text-right text-sm"
+                    className="w-16 rounded-lg border border-surface-muted px-2 py-1 text-right text-sm"
                   />
                 </div>
               </div>
