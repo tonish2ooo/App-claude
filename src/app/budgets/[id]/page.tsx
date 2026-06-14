@@ -7,7 +7,7 @@ import { Amount, BudgetTile, Card, Chevron, EmptyState, RingProgress, SectionTit
 import { tileColorFor } from "@/components/ui/budgetColor";
 import { Sheet } from "@/components/ui/Sheet";
 import { BudgetForm } from "@/components/forms/BudgetForm";
-import { ExpenseForm } from "@/components/forms/ExpenseForm";
+import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { getMonthlyBudgetAmount } from "@/lib/calc/budget";
 import { budgetContributions } from "@/lib/calc/contributions";
 import { spentForBudget } from "@/lib/calc/expenses";
@@ -27,10 +27,9 @@ export default function BudgetDetailPage() {
   const params = useParams();
   const id = String(params.id);
   const [editing, setEditing] = useState(false);
-  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
 
   const budget = state.budgets.find((b) => b.id === id);
-  const editingExpense = state.expenses.find((e) => e.id === editingExpenseId);
 
   const data = useMemo(() => {
     if (!budget) return null;
@@ -187,7 +186,7 @@ export default function BudgetDetailPage() {
               {i > 0 && <div className="my-3 border-t border-surface-muted" />}
               <button
                 type="button"
-                onClick={() => setEditingExpenseId(e.id)}
+                onClick={() => setOpenExpenseId(e.id)}
                 className="flex w-full items-center gap-3 text-left"
               >
                 <div className="min-w-0 flex-1">
@@ -228,15 +227,7 @@ export default function BudgetDetailPage() {
         <BudgetForm budget={budget} onDone={() => setEditing(false)} />
       </Sheet>
 
-      <Sheet
-        open={editingExpenseId !== null}
-        onClose={() => setEditingExpenseId(null)}
-        title="Modifier la dépense"
-      >
-        {editingExpense && (
-          <ExpenseForm expense={editingExpense} onDone={() => setEditingExpenseId(null)} />
-        )}
-      </Sheet>
+      <ExpenseSheet expenseId={openExpenseId} onClose={() => setOpenExpenseId(null)} />
     </div>
   );
 }

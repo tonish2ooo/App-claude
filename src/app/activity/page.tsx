@@ -4,8 +4,7 @@ import { useMemo, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
 import { Amount, BudgetTile, Card, Chevron, EmptyState } from "@/components/ui/primitives";
-import { Sheet } from "@/components/ui/Sheet";
-import { ExpenseForm } from "@/components/forms/ExpenseForm";
+import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { contributionSummaries } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
 
@@ -50,9 +49,8 @@ export default function ActivityPage() {
   const app = useAppState();
   const { state, currentMonth, activeUsers } = app;
   const [filter, setFilter] = useState<Filter>("all");
-  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
 
-  const editingExpense = state.expenses.find((e) => e.id === editingExpenseId);
   const userName = (id: string) => state.users.find((u) => u.id === id)?.firstName ?? "—";
   const merchantName = (id?: string) => state.merchants.find((m) => m.id === id)?.name ?? "Sans enseigne";
   const budgetName = (id?: string) => state.budgets.find((b) => b.id === id)?.name ?? "Sans budget";
@@ -158,7 +156,7 @@ export default function ActivityPage() {
                   <button
                     type="button"
                     disabled={!editable}
-                    onClick={editable ? () => setEditingExpenseId(item.id) : undefined}
+                    onClick={editable ? () => setOpenExpenseId(item.id) : undefined}
                     className="flex w-full items-center gap-3 text-left disabled:cursor-default"
                   >
                     <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
@@ -187,15 +185,7 @@ export default function ActivityPage() {
         )}
       </div>
 
-      <Sheet
-        open={editingExpenseId !== null}
-        onClose={() => setEditingExpenseId(null)}
-        title="Modifier la dépense"
-      >
-        {editingExpense && (
-          <ExpenseForm expense={editingExpense} onDone={() => setEditingExpenseId(null)} />
-        )}
-      </Sheet>
+      <ExpenseSheet expenseId={openExpenseId} onClose={() => setOpenExpenseId(null)} />
     </div>
   );
 }

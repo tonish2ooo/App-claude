@@ -57,6 +57,19 @@ export function formatMonthLabel(month: Month): string {
   }).format(date);
 }
 
+/** Libellé lisible d'une date "YYYY-MM-DD" (ex : "12 juin 2026"). */
+export function formatDateLabel(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1, d);
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
 /** Compare deux mois : <0 si a avant b, 0 si égaux, >0 si a après b. */
 export function compareMonths(a: Month, b: Month): number {
   return a < b ? -1 : a > b ? 1 : 0;
