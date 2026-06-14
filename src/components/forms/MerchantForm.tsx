@@ -27,6 +27,26 @@ export function MerchantForm({ onDone, merchant }: { onDone: () => void; merchan
   const [category, setCategory] = useState<MerchantCategory>(merchant?.category ?? "autre");
   const [logoUrl, setLogoUrl] = useState(merchant?.logoUrl);
   const [photoUrl, setPhotoUrl] = useState(merchant?.photoUrl);
+  const [latitude, setLatitude] = useState<number | undefined>(merchant?.latitude);
+  const [longitude, setLongitude] = useState<number | undefined>(merchant?.longitude);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "error">("idle");
+
+  function locate() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoStatus("error");
+      return;
+    }
+    setGeoStatus("locating");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLatitude(Number(pos.coords.latitude.toFixed(6)));
+        setLongitude(Number(pos.coords.longitude.toFixed(6)));
+        setGeoStatus("idle");
+      },
+      () => setGeoStatus("error"),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>, set: (v: string) => void) {
     const file = e.target.files?.[0];
@@ -35,10 +55,11 @@ export function MerchantForm({ onDone, merchant }: { onDone: () => void; merchan
 
   function save() {
     if (!name.trim()) return;
+    const fields = { name: name.trim(), address, phone, category, logoUrl, photoUrl, latitude, longitude };
     if (merchant) {
-      app.updateMerchant(merchant.id, { name: name.trim(), address, phone, category, logoUrl, photoUrl });
+      app.updateMerchant(merchant.id, fields);
     } else {
-      app.addMerchant({ name: name.trim(), address, phone, category, logoUrl, photoUrl, active: true });
+      app.addMerchant({ ...fields, active: true });
     }
     onDone();
   }
@@ -62,6 +83,33 @@ export function MerchantForm({ onDone, merchant }: { onDone: () => void; merchan
       </Field>
       <Field label="Téléphone">
         <TextInput value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
+      </Field>
+      <Field label="Localisation" hint="Capture la position GPS de l'appareil (utile sur place)">
+        <div className="flex items-center gap-2">
+          <button type="button" className="btn-ghost" onClick={locate} disabled={geoStatus === "locating"}>
+            {geoStatus === "locating" ? "Localisation…" : "📍 Me localiser"}
+          </button>
+          {latitude !== undefined && longitude !== undefined && (
+            <>
+              <span className="text-xs text-ink-muted">
+                {latitude.toFixed(4)}, {longitude.toFixed(4)}
+              </span>
+              <button
+                type="button"
+                className="text-xs font-medium text-danger"
+                onClick={() => {
+                  setLatitude(undefined);
+                  setLongitude(undefined);
+                }}
+              >
+                Effacer
+              </button>
+            </>
+          )}
+        </div>
+        {geoStatus === "error" && (
+          <p className="mt-1 text-xs text-danger">Localisation indisponible (autorisation refusée ?).</p>
+        )}
       </Field>
       <Field label="Logo">
         <input type="file" accept="image/*" onChange={(e) => onFile(e, setLogoUrl)} className="text-sm" />

@@ -176,6 +176,9 @@ export interface Merchant {
   address?: string;
   phone?: string;
   category: MerchantCategory;
+  /** Coordonnées géographiques (capturées via le GPS de l'appareil). */
+  latitude?: number;
+  longitude?: number;
   logoUrl?: string;
   photoUrl?: string;
   active: boolean;
