@@ -7,6 +7,7 @@ import { CATEGORY_EMOJI, CATEGORY_LABELS, eligibilityLabel } from "@/lib/courses
 import { EmojiTile, EmptyState, Pill } from "@/components/ui/primitives";
 import { TextInput } from "@/components/ui/fields";
 import { ProductSheet } from "@/components/courses/ProductSheet";
+import { RECEIPT_CATALOG } from "@/lib/courses/receiptCatalog";
 import { formatCents } from "@/lib/money";
 
 function normalize(text: string): string {
@@ -17,11 +18,23 @@ export default function ProductsPage() {
   const {
     state: { products },
     addItemFromProduct,
+    importCatalog,
   } = useAppState();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
   const [added, setAdded] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
+  function runReceiptImport() {
+    const n = importCatalog(RECEIPT_CATALOG);
+    setImportMsg(
+      n > 0
+        ? `${n} produit${n > 1 ? "s" : ""} import\u00e9${n > 1 ? "s" : ""} depuis vos tickets.`
+        : "Tous les produits des tickets sont d\u00e9j\u00e0 dans la base.",
+    );
+    window.setTimeout(() => setImportMsg(null), 3000);
+  }
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -53,16 +66,24 @@ export default function ProductsPage() {
         </button>
       </div>
 
+      <button type="button" className="btn-ghost mb-2 w-full" onClick={runReceiptImport}>
+        🧾 Importer mes tickets de caisse ({RECEIPT_CATALOG.length} produits)
+      </button>
+
+      {importMsg && (
+        <p className="mb-2 rounded-xl bg-green-50 px-3 py-2 text-center text-sm text-ok">{importMsg}</p>
+      )}
+
       <p className="mb-2 px-1 text-xs text-ink-muted">
-        {products.length} produit{products.length > 1 ? "s" : ""} dans la base · alimentée automatiquement
-        par vos dictées.
+        {products.length} produit{products.length > 1 ? "s" : ""} dans la base · alimentée par vos
+        dictées et vos tickets de caisse.
       </p>
 
       {products.length === 0 ? (
         <EmptyState
           icon="📦"
           title="Base de produits vide"
-          hint="Chaque article dicté crée automatiquement une fiche produit ici."
+          hint="Importez vos tickets de caisse ci-dessus, ou dictez des courses : chaque article crée une fiche produit."
         />
       ) : filtered.length === 0 ? (
         <EmptyState icon="🔍" title="Aucun résultat" hint={`Aucun produit ne correspond à « ${query} ».`} />

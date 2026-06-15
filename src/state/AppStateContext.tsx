@@ -61,6 +61,20 @@ interface AppStateApi {
   addProduct: (input: Partial<Product> & { name: string }) => Product;
   updateProduct: (id: string, patch: Partial<Product>) => void;
   removeProduct: (id: string) => void;
+  /**
+   * Importe un lot de fiches produits (ex : catalogue issu de tickets de
+   * caisse), sans dupliquer les noms déjà présents. Renvoie le nombre ajouté.
+   */
+  importCatalog: (
+    entries: Array<{
+      name: string;
+      brand?: string;
+      priceCents?: number;
+      unit?: string;
+      category: ProductCategory;
+      ticketResto: TicketRestoEligibility;
+    }>,
+  ) => number;
 
   /** Ajoute un article à la liste (depuis la dictée ou la saisie). */
   addItem: (input: AddItemInput) => ListItem;
@@ -297,6 +311,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             it.productId === id ? { ...it, productId: undefined } : it,
           ),
         })),
+
+      importCatalog: (entries) => {
+        let addedCount = 0;
+        setState((prev) => {
+          const ts = now();
+          const known = new Set(prev.products.map((p) => normalizeName(p.name)));
+          const additions: Product[] = [];
+          for (const entry of entries) {
+            const key = normalizeName(entry.name);
+            if (known.has(key)) continue; // déjà en base : on ne duplique pas
+            known.add(key);
+            additions.push({
+              id: makeId("prod"),
+              householdId: prev.household.id,
+              name: entry.name,
+              category: entry.category,
+              brand: entry.brand,
+              priceCents: entry.priceCents,
+              unit: entry.unit,
+              // Éligibilité issue du ticket (marqueur "*") : on la fige.
+              ticketResto: entry.ticketResto,
+              ticketRestoOverridden: true,
+              timesAdded: 0,
+              createdAt: ts,
+              updatedAt: ts,
+            });
+          }
+          addedCount = additions.length;
+          return { ...prev, products: [...prev.products, ...additions] };
+        });
+        return addedCount;
+      },
 
       addItem: (input) => {
         let result!: ListItem;
