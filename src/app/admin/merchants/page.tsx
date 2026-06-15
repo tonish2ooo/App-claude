@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
 import { AdminHeader } from "@/components/layout/AdminHeader";
-import { Avatar, Card, Chevron, EmptyState, Pill } from "@/components/ui/primitives";
+import { Avatar, Card, Chevron, EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
 import { Sheet } from "@/components/ui/Sheet";
 import { MerchantForm } from "@/components/forms/MerchantForm";
 import { computeMerchantStats } from "@/lib/calc/merchants";
 import { formatCents } from "@/lib/money";
+
+// Leaflet touche window : chargement client uniquement.
+const MerchantsMap = dynamic(
+  () => import("@/components/merchants/MerchantsMap").then((m) => m.MerchantsMap),
+  { ssr: false },
+);
 
 export default function AdminMerchantsPage() {
   const app = useAppState();
   const { state } = app;
   const router = useRouter();
   const [creating, setCreating] = useState(false);
+
+  const hasLocated = state.merchants.some(
+    (m) => m.latitude !== undefined && m.longitude !== undefined,
+  );
 
   return (
     <div className="space-y-3">
@@ -26,6 +37,13 @@ export default function AdminMerchantsPage() {
           </button>
         }
       />
+
+      {hasLocated && (
+        <>
+          <SectionTitle>Carte</SectionTitle>
+          <MerchantsMap merchants={state.merchants} />
+        </>
+      )}
 
       <div className="space-y-2">
         {state.merchants.map((m) => {
