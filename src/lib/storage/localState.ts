@@ -61,13 +61,20 @@ function reconcile(raw: unknown): LocalAppState | null {
   const partial = raw as Partial<LocalAppState>;
   if (!partial.household) return null;
   const base = buildEmptyState();
+  const household = { ...base.household, ...partial.household };
+  // Base produits vide (état d'une version antérieure au catalogue) : on la
+  // pré-charge depuis les tickets de caisse afin que l'autocomplétion et les
+  // suggestions fonctionnent immédiatement.
+  const hasProducts = Array.isArray(partial.products) && partial.products.length > 0;
   return {
     ...base,
     ...partial,
-    household: { ...base.household, ...partial.household },
+    household,
     filters: { ...base.filters, ...partial.filters },
     shoppers: partial.shoppers ?? [],
-    products: partial.products ?? [],
+    products: hasProducts
+      ? partial.products!
+      : buildCatalogProducts(household.id, new Date().toISOString()),
     items: partial.items ?? [],
     version: APP_STATE_VERSION,
   };
