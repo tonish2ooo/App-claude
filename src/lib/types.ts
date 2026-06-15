@@ -165,4 +165,10 @@ export interface LocalAppState {
   currentShopperId: string | null;
   /** Onboarding terminé (au moins un utilisateur créé). */
   onboardingComplete: boolean;
+  /**
+   * Version du catalogue de produits déjà fusionnée dans la base. Permet
+   * d'injecter une seule fois les produits issus des tickets de caisse, y
+   * compris dans un état sauvegardé par une version antérieure.
+   */
+  catalogVersion?: number;
 }

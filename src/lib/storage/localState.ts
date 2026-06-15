@@ -4,6 +4,22 @@ import { RECEIPT_CATALOG } from "../courses/receiptCatalog";
 
 const STORAGE_KEY = "app-courses:state";
 
+/**
+ * Version du catalogue produits. Incrémenter pour re-fusionner de nouveaux
+ * produits dans les bases existantes (la fusion ignore les noms déjà présents).
+ */
+export const CATALOG_VERSION = 1;
+
+/** Clé de comparaison d'un nom de produit (minuscules, sans accent, pluriel toléré). */
+function productKey(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/s\b/g, "")
+    .trim();
+}
+
 /** Supabase est-il configuré ? (persistance cloud / liste partagée multi-appareils). */
 export function isSupabaseConfigured(): boolean {
   return Boolean(
@@ -40,6 +56,16 @@ function buildCatalogProducts(householdId: string, ts: string): Product[] {
   }));
 }
 
+/**
+ * Fusionne le catalogue des tickets dans une liste de produits existante :
+ * ajoute uniquement les fiches dont le nom n'est pas déjà présent.
+ */
+function mergeCatalogProducts(existing: Product[], householdId: string, ts: string): Product[] {
+  const known = new Set(existing.map((p) => productKey(p.name)));
+  const additions = buildCatalogProducts(householdId, ts).filter((p) => !known.has(productKey(p.name)));
+  return additions.length > 0 ? [...existing, ...additions] : existing;
+}
+
 /** État vierge au premier lancement (base produits pré-chargée). */
 export function buildEmptyState(): LocalAppState {
   const household = buildHousehold();
@@ -52,6 +78,7 @@ export function buildEmptyState(): LocalAppState {
     filters: { ticketResto: "all", hideChecked: false },
     currentShopperId: null,
     onboardingComplete: false,
+    catalogVersion: CATALOG_VERSION,
   };
 }
 
@@ -62,21 +89,26 @@ function reconcile(raw: unknown): LocalAppState | null {
   if (!partial.household) return null;
   const base = buildEmptyState();
   const household = { ...base.household, ...partial.household };
-  // Base produits vide (état d'une version antérieure au catalogue) : on la
-  // pré-charge depuis les tickets de caisse afin que l'autocomplétion et les
-  // suggestions fonctionnent immédiatement.
-  const hasProducts = Array.isArray(partial.products) && partial.products.length > 0;
+
+  // Migration unique : si la base n'a jamais reçu cette version du catalogue
+  // (état d'une version antérieure), on y fusionne les produits des tickets de
+  // caisse, sans dupliquer ceux déjà présents ni écraser les ajouts existants.
+  const existingProducts = partial.products ?? [];
+  const products =
+    (partial.catalogVersion ?? 0) < CATALOG_VERSION
+      ? mergeCatalogProducts(existingProducts, household.id, new Date().toISOString())
+      : existingProducts;
+
   return {
     ...base,
     ...partial,
     household,
     filters: { ...base.filters, ...partial.filters },
     shoppers: partial.shoppers ?? [],
-    products: hasProducts
-      ? partial.products!
-      : buildCatalogProducts(household.id, new Date().toISOString()),
+    products,
     items: partial.items ?? [],
     version: APP_STATE_VERSION,
+    catalogVersion: CATALOG_VERSION,
   };
 }
 

@@ -7,6 +7,7 @@ import { CATEGORY_EMOJI, CATEGORY_LABELS, eligibilityLabel } from "@/lib/courses
 import { EmojiTile, EmptyState, Pill } from "@/components/ui/primitives";
 import { TextInput } from "@/components/ui/fields";
 import { ProductSheet } from "@/components/courses/ProductSheet";
+import { RECEIPT_CATALOG } from "@/lib/courses/receiptCatalog";
 import { formatCents } from "@/lib/money";
 
 function normalize(text: string): string {
@@ -17,11 +18,23 @@ export default function ProductsPage() {
   const {
     state: { products },
     addItemFromProduct,
+    importCatalog,
   } = useAppState();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
   const [creating, setCreating] = useState(false);
   const [added, setAdded] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
+  function reloadCatalog() {
+    const n = importCatalog(RECEIPT_CATALOG);
+    setImportMsg(
+      n > 0
+        ? `${n} produit${n > 1 ? "s" : ""} ajout\u00e9${n > 1 ? "s" : ""} depuis vos tickets.`
+        : "Tous les produits de vos tickets sont d\u00e9j\u00e0 dans la base.",
+    );
+    window.setTimeout(() => setImportMsg(null), 3000);
+  }
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -52,6 +65,14 @@ export default function ProductsPage() {
           + Fiche
         </button>
       </div>
+
+      <button type="button" className="btn-ghost mb-2 w-full" onClick={reloadCatalog}>
+        🧾 Recharger mes produits des tickets ({RECEIPT_CATALOG.length})
+      </button>
+
+      {importMsg && (
+        <p className="mb-2 rounded-xl bg-green-50 px-3 py-2 text-center text-sm text-ok">{importMsg}</p>
+      )}
 
       <p className="mb-2 px-1 text-xs text-ink-muted">
         {products.length} produit{products.length > 1 ? "s" : ""} dans la base · enrichie par vos
