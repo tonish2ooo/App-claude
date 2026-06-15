@@ -8,6 +8,7 @@ const ENTRIES = [
   { href: "/admin/users", icon: "👥", label: "Utilisateurs", desc: "Membres du foyer" },
   { href: "/admin/incomes", icon: "💶", label: "Revenus mensuels", desc: "Salaires et tickets restaurant" },
   { href: "/admin/budgets", icon: "📊", label: "Budgets", desc: "Enveloppes et provisions" },
+  { href: "/admin/recurring", icon: "🔁", label: "Abonnements", desc: "Dépenses récurrentes automatiques" },
   { href: "/admin/merchants", icon: "🏬", label: "Enseignes", desc: "Commerçants et fournisseurs" },
   { href: "/admin/settings", icon: "🏠", label: "Paramètres du foyer", desc: "Mois, devise, mode, solde" },
   { href: "/admin/security", icon: "🔐", label: "Sécurité / connexion", desc: "Connexion rapide, déconnexion" },

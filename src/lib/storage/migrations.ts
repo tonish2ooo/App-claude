@@ -27,6 +27,16 @@ export function migrateState(raw: unknown): LocalAppState | null {
     };
   }
 
+  // v3 -> v4 : abonnements récurrents et objectifs d'épargne.
+  if ((state.version ?? 1) < 4) {
+    migrated = {
+      ...migrated,
+      recurringExpenses: migrated.recurringExpenses ?? [],
+      materializedRecurring: migrated.materializedRecurring ?? [],
+      savingsGoals: migrated.savingsGoals ?? [],
+    };
+  }
+
   if (!migrated.household) return null;
 
   const result: LocalAppState = {
@@ -38,6 +48,9 @@ export function migrateState(raw: unknown): LocalAppState | null {
     provisions: migrated.provisions ?? [],
     merchants: migrated.merchants ?? [],
     expenses: migrated.expenses ?? [],
+    recurringExpenses: migrated.recurringExpenses ?? [],
+    materializedRecurring: migrated.materializedRecurring ?? [],
+    savingsGoals: migrated.savingsGoals ?? [],
     passkeys: migrated.passkeys ?? [],
     onboardingComplete: migrated.onboardingComplete ?? false,
     currentUserId: migrated.currentUserId ?? null,

@@ -202,7 +202,7 @@ export interface MerchantStats {
 // ---------------------------------------------------------------------------
 
 export type ExpensePaymentSource = "common_account" | "meal_voucher";
-export type ExpenseSource = "manual" | "bank" | "import";
+export type ExpenseSource = "manual" | "bank" | "import" | "recurring";
 
 export interface Expense {
   id: string;
@@ -221,6 +221,52 @@ export interface Expense {
   /** Architecture seulement : référence vers un justificatif. */
   receiptUrl?: string;
   source: ExpenseSource;
+  /** Renseigné si la dépense a été générée depuis un abonnement récurrent. */
+  recurringId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Dépenses récurrentes (abonnements / charges fixes)
+// ---------------------------------------------------------------------------
+
+export interface RecurringExpense {
+  id: string;
+  householdId: string;
+  label: string;
+  amountCents: Cents;
+  merchantId?: string;
+  budgetId?: string;
+  /** Utilisateur à qui la dépense est rattachée (payeur). */
+  userId: string;
+  paymentSource: ExpensePaymentSource;
+  splitRule: BudgetSplitRule;
+  /** Jour du mois où la dépense est créée (1..28). */
+  dayOfMonth: number;
+  /** Premier mois d'application "YYYY-MM" (la génération ne remonte pas avant). */
+  startMonth: Month;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Objectifs d'épargne
+// ---------------------------------------------------------------------------
+
+export interface SavingsGoal {
+  id: string;
+  householdId: string;
+  name: string;
+  icon: string;
+  targetCents: Cents;
+  /** Montant déjà épargné. */
+  currentCents: Cents;
+  /** Échéance visée "YYYY-MM-DD" (optionnelle). */
+  targetDate?: string;
+  /** Budget d'épargne associé (optionnel). */
+  budgetId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -319,7 +365,7 @@ export type BankConnectionMode = "manual" | "connected" | "demo";
 // État applicatif persistant (localStorage)
 // ---------------------------------------------------------------------------
 
-export const APP_STATE_VERSION = 3;
+export const APP_STATE_VERSION = 4;
 
 export interface LocalAppState {
   version: number;
@@ -330,6 +376,10 @@ export interface LocalAppState {
   provisions: MonthlyProvision[];
   merchants: Merchant[];
   expenses: Expense[];
+  recurringExpenses: RecurringExpense[];
+  /** Clés "recurringId:YYYY-MM" déjà matérialisées (anti-doublon, append-only). */
+  materializedRecurring: string[];
+  savingsGoals: SavingsGoal[];
   passkeys: PasskeyCredential[];
   /** Onboarding terminé. */
   onboardingComplete: boolean;

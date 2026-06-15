@@ -233,6 +233,67 @@ export function buildDemoState(): LocalAppState {
     now,
   });
 
+  const recurringExpenses: LocalAppState["recurringExpenses"] = [
+    {
+      id: "rec_netflix",
+      householdId,
+      label: "Netflix",
+      amountCents: 1349,
+      budgetId: "budget_internet",
+      userId: u1,
+      paymentSource: "common_account",
+      splitRule: { mode: "prorata" },
+      dayOfMonth: 5,
+      startMonth: month,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "rec_sport",
+      householdId,
+      label: "Salle de sport",
+      amountCents: 2990,
+      budgetId: "budget_galipettes",
+      userId: u2,
+      paymentSource: "common_account",
+      splitRule: { mode: "prorata" },
+      dayOfMonth: 2,
+      startMonth: month,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const year = month.slice(0, 4);
+  const savingsGoals: LocalAppState["savingsGoals"] = [
+    {
+      id: "goal_vacances",
+      householdId,
+      name: "Vacances",
+      icon: "plane",
+      targetCents: 600000,
+      currentCents: 240000,
+      targetDate: `${year}-12-20`,
+      budgetId: "budget_vacances",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "goal_etudes",
+      householdId,
+      name: "Études Léonie",
+      icon: "backpack",
+      targetCents: 1000000,
+      currentCents: 320000,
+      targetDate: `${Number(year) + 1}-09-01`,
+      budgetId: "budget_epargne",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
   return {
     version: APP_STATE_VERSION,
     household: {
@@ -251,6 +312,9 @@ export function buildDemoState(): LocalAppState {
     provisions,
     merchants,
     expenses,
+    recurringExpenses,
+    materializedRecurring: [],
+    savingsGoals,
     passkeys: [],
     onboardingComplete: true,
     currentUserId: u1,
@@ -279,6 +343,9 @@ export function buildEmptyState(): LocalAppState {
     provisions: [],
     merchants: [],
     expenses: [],
+    recurringExpenses: [],
+    materializedRecurring: [],
+    savingsGoals: [],
     passkeys: [],
     onboardingComplete: false,
     currentUserId: null,

@@ -49,6 +49,10 @@ describe("migrateState", () => {
     expect(migrated?.provisions).toEqual([]);
     expect(migrated?.merchants).toEqual([]);
     expect(migrated?.passkeys).toEqual([]);
+    // Collections introduites en v4.
+    expect(migrated?.recurringExpenses).toEqual([]);
+    expect(migrated?.materializedRecurring).toEqual([]);
+    expect(migrated?.savingsGoals).toEqual([]);
   });
 });
 

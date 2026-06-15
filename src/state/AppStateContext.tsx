@@ -19,6 +19,8 @@ import {
   type MonthlyIncome,
   type PasskeyCredential,
   type ProvisionStatus,
+  type RecurringExpense,
+  type SavingsGoal,
   type UserProfile,
 } from "@/lib/types";
 import { loadState, saveState } from "@/lib/storage/localState";
@@ -26,6 +28,7 @@ import { migrateState } from "@/lib/storage/migrations";
 import { buildDemoState, buildEmptyState } from "@/lib/seed/demo";
 import { buildPresetBudgets } from "@/lib/seed/budgets";
 import { generateMonthlyAnnualBudgetProvisions } from "@/lib/calc/provisions";
+import { materializeRecurringForMonth } from "@/lib/calc/recurring";
 import { makeId } from "@/lib/id";
 import { todayIso } from "@/lib/date";
 
@@ -76,6 +79,16 @@ interface AppStateApi {
   updateExpense: (id: string, patch: Partial<Expense>) => void;
   removeExpense: (id: string) => void;
 
+  addRecurring: (r: Omit<RecurringExpense, "id" | "householdId" | "createdAt" | "updatedAt">) => RecurringExpense;
+  updateRecurring: (id: string, patch: Partial<RecurringExpense>) => void;
+  removeRecurring: (id: string) => void;
+  toggleRecurring: (id: string) => void;
+
+  addGoal: (g: Omit<SavingsGoal, "id" | "householdId" | "createdAt" | "updatedAt">) => SavingsGoal;
+  updateGoal: (id: string, patch: Partial<SavingsGoal>) => void;
+  removeGoal: (id: string) => void;
+  addToGoal: (id: string, deltaCents: number) => void;
+
   setProvisionStatus: (id: string, status: ProvisionStatus) => void;
 
   addPasskey: (credential: PasskeyCredential) => void;
@@ -84,7 +97,7 @@ interface AppStateApi {
 
 const AppStateContext = createContext<AppStateApi | null>(null);
 
-/** Régénère les provisions du mois courant (idempotent). */
+/** Recalcule l'état dérivé du mois courant (provisions + dépenses récurrentes). */
 function withRegeneratedProvisions(state: LocalAppState): LocalAppState {
   const activeUsers = state.users.filter((u) => u.active);
   const provisions = generateMonthlyAnnualBudgetProvisions({
@@ -94,7 +107,14 @@ function withRegeneratedProvisions(state: LocalAppState): LocalAppState {
     activeUsers,
     incomes: state.incomes,
   });
-  return { ...state, provisions };
+  const { expenses, materialized } = materializeRecurringForMonth({
+    recurrings: state.recurringExpenses,
+    expenses: state.expenses,
+    materialized: state.materializedRecurring,
+    month: state.household.currentMonth,
+    currency: state.household.defaultCurrency,
+  });
+  return { ...state, provisions, expenses, materializedRecurring: materialized };
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
@@ -334,6 +354,67 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         })),
       removeExpense: (id) =>
         update((prev) => ({ ...prev, expenses: prev.expenses.filter((e) => e.id !== id) })),
+
+      addRecurring: (r) => {
+        const created: RecurringExpense = {
+          ...r,
+          id: makeId("rec"),
+          householdId: state.household.id,
+          createdAt: now(),
+          updatedAt: now(),
+        };
+        update((prev) => ({ ...prev, recurringExpenses: [...prev.recurringExpenses, created] }));
+        return created;
+      },
+      updateRecurring: (id, patch) =>
+        update((prev) => ({
+          ...prev,
+          recurringExpenses: prev.recurringExpenses.map((r) =>
+            r.id === id ? { ...r, ...patch, updatedAt: now() } : r,
+          ),
+        })),
+      removeRecurring: (id) =>
+        update((prev) => ({
+          ...prev,
+          recurringExpenses: prev.recurringExpenses.filter((r) => r.id !== id),
+        })),
+      toggleRecurring: (id) =>
+        update((prev) => ({
+          ...prev,
+          recurringExpenses: prev.recurringExpenses.map((r) =>
+            r.id === id ? { ...r, active: !r.active, updatedAt: now() } : r,
+          ),
+        })),
+
+      addGoal: (g) => {
+        const created: SavingsGoal = {
+          ...g,
+          id: makeId("goal"),
+          householdId: state.household.id,
+          createdAt: now(),
+          updatedAt: now(),
+        };
+        update((prev) => ({ ...prev, savingsGoals: [...prev.savingsGoals, created] }));
+        return created;
+      },
+      updateGoal: (id, patch) =>
+        update((prev) => ({
+          ...prev,
+          savingsGoals: prev.savingsGoals.map((g) =>
+            g.id === id ? { ...g, ...patch, updatedAt: now() } : g,
+          ),
+        })),
+      removeGoal: (id) =>
+        update((prev) => ({ ...prev, savingsGoals: prev.savingsGoals.filter((g) => g.id !== id) })),
+      addToGoal: (id, deltaCents) =>
+        update((prev) => ({
+          ...prev,
+          savingsGoals: prev.savingsGoals.map((g) =>
+            g.id === id
+              ? { ...g, currentCents: Math.max(0, g.currentCents + deltaCents), updatedAt: now() }
+              : g,
+          ),
+        })),
 
       setProvisionStatus: (id, status) =>
         update((prev) => ({

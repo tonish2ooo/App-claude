@@ -9,8 +9,13 @@ import { tileColorFor } from "@/components/ui/budgetColor";
 import type { BudgetType } from "@/lib/types";
 import { Sheet } from "@/components/ui/Sheet";
 import { BudgetForm } from "@/components/forms/BudgetForm";
+import { GoalForm } from "@/components/forms/GoalForm";
+import { BudgetIcon } from "@/components/ui/BudgetIcon";
 import { budgetProgressForMonth, budgetTotalForMonth } from "@/lib/calc/dashboard";
+import { goalProgress } from "@/lib/calc/goals";
 import { formatCents } from "@/lib/money";
+import { todayIso } from "@/lib/date";
+import type { SavingsGoal } from "@/lib/types";
 
 const TYPE_LABEL: Record<string, string> = {
   monthly: "Mensuel",
@@ -24,6 +29,9 @@ export default function BudgetsPage() {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<"all" | BudgetType>("all");
+  const [goalCreating, setGoalCreating] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
+  const today = todayIso();
 
   const progress = useMemo(
     () => budgetProgressForMonth(state.budgets, state.expenses, currentMonth),
@@ -166,8 +174,77 @@ export default function BudgetsPage() {
         )}
       </Card>
 
+      {/* Objectifs d'épargne */}
+      <SectionTitle
+        action={
+          <button type="button" onClick={() => setGoalCreating(true)}>
+            + Objectif
+          </button>
+        }
+      >
+        Objectifs d'épargne
+      </SectionTitle>
+      <div className="space-y-2">
+        {state.savingsGoals.length === 0 ? (
+          <EmptyState icon="🎯" title="Aucun objectif" hint="Fixez un montant à atteindre (vacances, projet…)." />
+        ) : (
+          state.savingsGoals.map((g) => {
+            const p = goalProgress(g, today);
+            const color = p.reached ? "#34c759" : "#007aff";
+            return (
+              <Card key={g.id} onClick={() => setEditingGoal(g)}>
+                <div className="flex items-center gap-3">
+                  <RingProgress progress={Math.min(1, p.pct)} size={48} stroke={5} color={color}>
+                    <span className="text-[9px] font-bold" style={{ color }}>
+                      {Math.round(p.pct * 100)}%
+                    </span>
+                  </RingProgress>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <BudgetIcon name={g.icon} size={16} color={color} />
+                      <p className="truncate font-medium">{g.name}</p>
+                    </div>
+                    <p className="text-xs text-ink-muted">
+                      {formatCents(g.currentCents)} / {formatCents(g.targetCents)}
+                      {p.reached
+                        ? " · atteint 🎉"
+                        : p.perMonthCents !== null
+                        ? ` · ${formatCents(p.perMonthCents)}/mois`
+                        : ` · reste ${formatCents(p.remainingCents)}`}
+                    </p>
+                  </div>
+                  <Chevron />
+                </div>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
       <Sheet open={creating} onClose={() => setCreating(false)} title="Nouveau budget">
         <BudgetForm onDone={() => setCreating(false)} />
+      </Sheet>
+
+      <Sheet open={goalCreating} onClose={() => setGoalCreating(false)} title="Nouvel objectif d'épargne">
+        <GoalForm onDone={() => setGoalCreating(false)} />
+      </Sheet>
+
+      <Sheet open={editingGoal !== null} onClose={() => setEditingGoal(null)} title="Modifier l'objectif">
+        {editingGoal && (
+          <div>
+            <GoalForm goal={editingGoal} onDone={() => setEditingGoal(null)} />
+            <button
+              type="button"
+              className="btn-danger mt-3 w-full"
+              onClick={() => {
+                app.removeGoal(editingGoal.id);
+                setEditingGoal(null);
+              }}
+            >
+              Supprimer l'objectif
+            </button>
+          </div>
+        )}
       </Sheet>
     </div>
   );
