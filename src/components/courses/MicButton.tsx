@@ -1,10 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { useSpeechRecognition } from "@/components/courses/useSpeechRecognition";
 import { parseVoiceTranscript } from "@/lib/courses/voiceParser";
+import { CATEGORY_EMOJI } from "@/lib/courses/ticketRestaurant";
 import { TextInput } from "@/components/ui/fields";
+import { formatCents } from "@/lib/money";
+
+function normalize(text: string): string {
+  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
 
 function MicIcon({ active }: { active: boolean }) {
   return (
@@ -15,11 +21,40 @@ function MicIcon({ active }: { active: boolean }) {
   );
 }
 
-/** Gros bouton micro + saisie manuelle de secours. */
+/** Gros bouton micro + saisie manuelle avec autocomplétion sur la base produits. */
 export function MicButton() {
-  const { addItems } = useAppState();
+  const {
+    addItems,
+    addItemFromProduct,
+    state: { products },
+  } = useAppState();
   const [lastAdded, setLastAdded] = useState<string[]>([]);
   const [manual, setManual] = useState("");
+
+  /** Suggestions issues de la base produits dès les premières lettres saisies. */
+  const suggestions = useMemo(() => {
+    const q = normalize(manual);
+    if (q.length < 1) return [];
+    const matches = products.filter((p) => {
+      const n = normalize(p.name);
+      const b = p.brand ? normalize(p.brand) : "";
+      return n.includes(q) || b.includes(q);
+    });
+    // Préfixe d'abord, puis popularité, puis ordre alphabétique.
+    return matches
+      .sort((a, b) => {
+        const ap = normalize(a.name).startsWith(q) ? 0 : 1;
+        const bp = normalize(b.name).startsWith(q) ? 0 : 1;
+        return ap - bp || b.timesAdded - a.timesAdded || a.name.localeCompare(b.name);
+      })
+      .slice(0, 6);
+  }, [manual, products]);
+
+  function pickSuggestion(id: string, label: string) {
+    addItemFromProduct(id);
+    setLastAdded([label]);
+    setManual("");
+  }
 
   const handleFinal = useCallback(
     (text: string) => {
@@ -93,6 +128,30 @@ export function MicButton() {
           Ajouter
         </button>
       </div>
+
+      {suggestions.length > 0 && (
+        <ul className="w-full max-w-xs overflow-hidden rounded-xl bg-surface-subtle">
+          {suggestions.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => pickSuggestion(p.id, p.name)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition active:bg-surface-muted"
+              >
+                <span>{CATEGORY_EMOJI[p.category]}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {p.name}
+                  {p.brand && <span className="text-ink-muted"> · {p.brand}</span>}
+                </span>
+                {p.ticketResto === "eligible" && <span title="Éligible ticket resto">🎫</span>}
+                {p.priceCents != null && (
+                  <span className="shrink-0 text-xs text-ink-muted">{formatCents(p.priceCents)}</span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {lastAdded.length > 0 && (
         <p className="max-w-xs text-center text-xs text-ok">

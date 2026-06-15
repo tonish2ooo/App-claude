@@ -9,6 +9,10 @@ import {
   eligibilityLabel,
 } from "@/lib/courses/ticketRestaurant";
 import { EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
+import { formatCents } from "@/lib/money";
+
+/** Plafond journalier d'utilisation des titres-restaurant (France, 2025). */
+const TR_DAILY_CAP_CENTS = 2500;
 
 const CATEGORY_ORDER: ProductCategory[] = [
   "fruits_legumes",
@@ -37,7 +41,7 @@ const TR_FILTER_OPTIONS: Array<{ value: TicketRestoFilter; label: string }> = [
 
 export function ShoppingListView() {
   const {
-    state: { items, filters, shoppers },
+    state: { items, products, filters, shoppers },
     setFilters,
     toggleItem,
     removeItem,
@@ -45,6 +49,32 @@ export function ShoppingListView() {
     setItemEligibility,
     clearChecked,
   } = useAppState();
+
+  const priceById = useMemo(
+    () => new Map(products.map((p) => [p.id, p.priceCents] as const)),
+    [products],
+  );
+
+  /** Total estimé des articles à acheter (non cochés) et part éligible TR. */
+  const totals = useMemo(() => {
+    let totalCents = 0;
+    let eligibleCents = 0;
+    let pricedCount = 0;
+    let unpricedCount = 0;
+    for (const it of items) {
+      if (it.checked) continue;
+      const unit = it.productId ? priceById.get(it.productId) : undefined;
+      if (unit == null) {
+        unpricedCount += 1;
+        continue;
+      }
+      const line = unit * it.quantity;
+      totalCents += line;
+      pricedCount += 1;
+      if (it.ticketResto === "eligible") eligibleCents += line;
+    }
+    return { totalCents, eligibleCents, pricedCount, unpricedCount };
+  }, [items, priceById]);
 
   const filtered = useMemo(() => {
     return items.filter((it) => {
@@ -79,6 +109,28 @@ export function ShoppingListView() {
 
   return (
     <div>
+      {/* Total estimé du panier + part payable en tickets restaurant */}
+      {totals.pricedCount > 0 && (
+        <div className="mb-2 rounded-2xl bg-hero p-4 text-white shadow-hero">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-[13px] text-white/80">Total estimé à acheter</p>
+              <p className="text-2xl font-bold tracking-tight">{formatCents(totals.totalCents)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[13px] text-white/80">🎫 Ticket resto</p>
+              <p className="text-lg font-semibold">{formatCents(totals.eligibleCents)}</p>
+            </div>
+          </div>
+          <p className="mt-1 text-[11px] text-white/75">
+            {totals.eligibleCents > TR_DAILY_CAP_CENTS
+              ? `Au-delà du plafond de ${formatCents(TR_DAILY_CAP_CENTS)}/jour en titres-restaurant.`
+              : `Payable en titres-restaurant (plafond ${formatCents(TR_DAILY_CAP_CENTS)}/jour).`}
+            {totals.unpricedCount > 0 && ` · ${totals.unpricedCount} article(s) sans prix connu.`}
+          </p>
+        </div>
+      )}
+
       {/* Filtre tickets restaurant */}
       <div className="sticky top-[60px] z-10 -mx-4 mb-2 bg-surface-subtle/95 px-4 py-2 backdrop-blur">
         <div className="flex gap-1 rounded-xl bg-surface-muted p-1">

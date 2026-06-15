@@ -1,5 +1,6 @@
-import { APP_STATE_VERSION, type Household, type LocalAppState } from "../types";
+import { APP_STATE_VERSION, type Household, type LocalAppState, type Product } from "../types";
 import { makeId } from "../id";
+import { RECEIPT_CATALOG } from "../courses/receiptCatalog";
 
 const STORAGE_KEY = "app-courses:state";
 
@@ -22,13 +23,31 @@ function buildHousehold(): Household {
   };
 }
 
-/** État vierge au premier lancement. */
+/** Fiches produits pré-chargées depuis le catalogue (tickets de caisse). */
+function buildCatalogProducts(householdId: string, ts: string): Product[] {
+  return RECEIPT_CATALOG.map((entry) => ({
+    id: makeId("prod"),
+    householdId,
+    name: entry.name,
+    category: entry.category,
+    brand: entry.brand,
+    priceCents: entry.priceCents,
+    ticketResto: entry.ticketResto,
+    ticketRestoOverridden: true,
+    timesAdded: 0,
+    createdAt: ts,
+    updatedAt: ts,
+  }));
+}
+
+/** État vierge au premier lancement (base produits pré-chargée). */
 export function buildEmptyState(): LocalAppState {
+  const household = buildHousehold();
   return {
     version: APP_STATE_VERSION,
-    household: buildHousehold(),
+    household,
     shoppers: [],
-    products: [],
+    products: buildCatalogProducts(household.id, household.createdAt),
     items: [],
     filters: { ticketResto: "all", hideChecked: false },
     currentShopperId: null,
