@@ -26,6 +26,10 @@ export function MerchantForm({ onDone, merchant }: { onDone: () => void; merchan
   const [address, setAddress] = useState(merchant?.address ?? "");
   const [phone, setPhone] = useState(merchant?.phone ?? "");
   const [category, setCategory] = useState<MerchantCategory>(merchant?.category ?? "autre");
+  const activeBudgets = app.state.budgets.filter((b) => b.active);
+  const [defaultBudgetId, setDefaultBudgetId] = useState(
+    merchant?.defaultBudgetId ?? activeBudgets[0]?.id ?? "",
+  );
   const [logoUrl, setLogoUrl] = useState(merchant?.logoUrl);
   const [photoUrl, setPhotoUrl] = useState(merchant?.photoUrl);
   const [latitude, setLatitude] = useState<number | undefined>(merchant?.latitude);
@@ -82,7 +86,17 @@ export function MerchantForm({ onDone, merchant }: { onDone: () => void; merchan
         lng = point.longitude;
       }
     }
-    const fields = { name: name.trim(), address, phone, category, logoUrl, photoUrl, latitude: lat, longitude: lng };
+    const fields = {
+      name: name.trim(),
+      address,
+      phone,
+      category,
+      defaultBudgetId: defaultBudgetId || undefined,
+      logoUrl,
+      photoUrl,
+      latitude: lat,
+      longitude: lng,
+    };
     if (merchant) {
       app.updateMerchant(merchant.id, fields);
     } else {
@@ -102,6 +116,16 @@ export function MerchantForm({ onDone, merchant }: { onDone: () => void; merchan
           {CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="Budget par défaut" hint="Pré-rempli lors de l'ajout d'une dépense (modifiable à ce moment-là)">
+        <Select value={defaultBudgetId} onChange={(e) => setDefaultBudgetId(e.target.value)}>
+          {activeBudgets.length === 0 && <option value="">— Aucun budget —</option>}
+          {activeBudgets.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
             </option>
           ))}
         </Select>

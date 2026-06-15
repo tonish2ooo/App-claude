@@ -89,6 +89,10 @@ export function buildDemoState(): LocalAppState {
       householdId,
       name: "Carrefour",
       category: "alimentation",
+      defaultBudgetId: "budget_courses",
+      address: "2 Avenue de la République, 59650 Villeneuve-d'Ascq",
+      latitude: 50.6311,
+      longitude: 3.1469,
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -98,6 +102,10 @@ export function buildDemoState(): LocalAppState {
       householdId,
       name: "Le Bistrot",
       category: "restaurant",
+      defaultBudgetId: "budget_restaurant",
+      address: "12 Place du Général de Gaulle, 59000 Lille",
+      latitude: 50.6366,
+      longitude: 3.0635,
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -124,7 +132,7 @@ export function buildDemoState(): LocalAppState {
     { budgetId: "budget_autre", amountCents: 13219 },
   ];
 
-  const expenses: LocalAppState["expenses"] = realExpenses.map((e, i) => ({
+  const currentExpenses: LocalAppState["expenses"] = realExpenses.map((e, i) => ({
     id: makeId("exp"),
     householdId,
     merchantId: e.merchantId,
@@ -139,6 +147,82 @@ export function buildDemoState(): LocalAppState {
     createdAt: now,
     updatedAt: now,
   }));
+
+  // Historique fictif sur les mois précédents pour étoffer les fiches enseignes
+  // (n'affecte pas le mois courant, filtré par mois dans le tableau de bord).
+  function monthMinus(base: string, n: number): string {
+    let m = base;
+    for (let k = 0; k < n; k += 1) m = previousMonth(m);
+    return m;
+  }
+  interface HistPoint {
+    monthsAgo: number;
+    day: number;
+    cents: number;
+    meal?: boolean;
+  }
+  function buildHistory(
+    points: HistPoint[],
+    merchantId: string,
+    budgetId: string,
+  ): LocalAppState["expenses"] {
+    return points.map((p, i) => {
+      const userId = i % 2 === 0 ? u1 : u2;
+      return {
+        id: makeId("exp"),
+        householdId,
+        merchantId,
+        userId,
+        amountCents: p.cents,
+        currency: "EUR",
+        paymentSource: p.meal ? "meal_voucher" : "common_account",
+        mealVoucherUserId: p.meal ? userId : undefined,
+        splitRule: { mode: "prorata" },
+        date: `${monthMinus(month, p.monthsAgo)}-${String(p.day).padStart(2, "0")}`,
+        budgetId,
+        source: "manual",
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+  }
+
+  const carrefourHistory: HistPoint[] = [
+    { monthsAgo: 1, day: 3, cents: 14250 },
+    { monthsAgo: 1, day: 11, cents: 8830, meal: true },
+    { monthsAgo: 1, day: 19, cents: 16740 },
+    { monthsAgo: 1, day: 27, cents: 11200 },
+    { monthsAgo: 2, day: 2, cents: 15990 },
+    { monthsAgo: 2, day: 9, cents: 9450 },
+    { monthsAgo: 2, day: 17, cents: 13320, meal: true },
+    { monthsAgo: 2, day: 25, cents: 17880 },
+    { monthsAgo: 3, day: 5, cents: 12100 },
+    { monthsAgo: 3, day: 13, cents: 16650 },
+    { monthsAgo: 3, day: 21, cents: 8990 },
+    { monthsAgo: 3, day: 28, cents: 14770 },
+    { monthsAgo: 4, day: 4, cents: 13880 },
+    { monthsAgo: 4, day: 12, cents: 15510, meal: true },
+    { monthsAgo: 4, day: 20, cents: 9930 },
+    { monthsAgo: 4, day: 26, cents: 18230 },
+    { monthsAgo: 5, day: 6, cents: 11470 },
+    { monthsAgo: 5, day: 15, cents: 17050 },
+    { monthsAgo: 5, day: 23, cents: 13690 },
+  ];
+  const bistrotHistory: HistPoint[] = [
+    { monthsAgo: 1, day: 10, cents: 6800 },
+    { monthsAgo: 1, day: 24, cents: 4250, meal: true },
+    { monthsAgo: 2, day: 15, cents: 7920 },
+    { monthsAgo: 3, day: 8, cents: 5400 },
+    { monthsAgo: 3, day: 22, cents: 9100 },
+    { monthsAgo: 4, day: 18, cents: 6650 },
+    { monthsAgo: 5, day: 12, cents: 8300 },
+  ];
+
+  const expenses: LocalAppState["expenses"] = [
+    ...currentExpenses,
+    ...buildHistory(carrefourHistory, "merchant_carrefour", "budget_courses"),
+    ...buildHistory(bistrotHistory, "merchant_resto", "budget_restaurant"),
+  ];
 
   const provisions = generateMonthlyAnnualBudgetProvisions({
     budgets,

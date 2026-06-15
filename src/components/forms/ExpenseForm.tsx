@@ -13,9 +13,8 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
   const { state, currentUser, activeUsers, currentMonth } = app;
   const incomeComplete = state.incomes.some((i) => i.month === currentMonth);
 
-  const [merchantId, setMerchantId] = useState<string>(
-    expense?.merchantId ?? state.merchants[0]?.id ?? "",
-  );
+  const initialMerchantId = expense?.merchantId ?? state.merchants[0]?.id ?? "";
+  const [merchantId, setMerchantId] = useState<string>(initialMerchantId);
   const [newMerchant, setNewMerchant] = useState("");
   const [userId, setUserId] = useState(expense?.userId ?? currentUser?.id ?? activeUsers[0]?.id ?? "");
   const [amount, setAmount] = useState(expense ? centsToInput(expense.amountCents) : "");
@@ -32,10 +31,18 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
   const today = todayIso();
   const defaultDate = expense?.date ?? (today.startsWith(currentMonth) ? today : `${currentMonth}-15`);
   const [date, setDate] = useState(defaultDate);
+  const initialMerchantBudget = state.merchants.find((m) => m.id === initialMerchantId)?.defaultBudgetId;
   const [budgetId, setBudgetId] = useState(
-    expense?.budgetId ?? state.budgets.find((b) => b.active)?.id ?? "",
+    expense?.budgetId ?? initialMerchantBudget ?? state.budgets.find((b) => b.active)?.id ?? "",
   );
   const [note, setNote] = useState(expense?.note ?? "");
+
+  // Changer d'enseigne pré-remplit son budget par défaut (modifiable ensuite).
+  function onMerchantChange(id: string) {
+    setMerchantId(id);
+    const m = state.merchants.find((x) => x.id === id);
+    if (m?.defaultBudgetId) setBudgetId(m.defaultBudgetId);
+  }
 
   const amountCents = parseAmountToCents(amount);
   const splitValid =
@@ -96,7 +103,7 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
       )}
 
       <Field label="Enseigne">
-        <Select value={merchantId} onChange={(e) => setMerchantId(e.target.value)}>
+        <Select value={merchantId} onChange={(e) => onMerchantChange(e.target.value)}>
           <option value="">— Choisir —</option>
           {state.merchants.map((m) => (
             <option key={m.id} value={m.id}>

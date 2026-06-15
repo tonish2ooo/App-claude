@@ -176,6 +176,8 @@ export interface Merchant {
   address?: string;
   phone?: string;
   category: MerchantCategory;
+  /** Budget associé par défaut (pré-rempli à la création d'une dépense). */
+  defaultBudgetId?: string;
   /** Coordonnées géographiques (capturées via le GPS de l'appareil). */
   latitude?: number;
   longitude?: number;
