@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { formatCents } from "@/lib/money";
+import { BudgetIcon } from "@/components/ui/BudgetIcon";
 
 export function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
@@ -28,9 +29,9 @@ export function Card({
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-2 mt-5 flex items-center justify-between px-1">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">{children}</h2>
-      {action}
+    <div className="mb-1 mt-6 flex items-center justify-between px-1">
+      <h2 className="text-[13px] font-semibold uppercase tracking-wider text-ink-muted">{children}</h2>
+      {action && <span className="text-sm font-medium text-brand-600">{action}</span>}
     </div>
   );
 }
@@ -48,19 +49,97 @@ export function Amount({
   return <span className={className}>{prefix}{formatCents(cents)}</span>;
 }
 
+/** Circular ring progress — Apple Health style. */
+export function RingProgress({
+  progress,
+  size = 44,
+  stroke = 4,
+  color = "#007aff",
+  bg = "#e5e5ea",
+  children,
+}: {
+  progress: number;
+  size?: number;
+  stroke?: number;
+  color?: string;
+  bg?: string;
+  children?: ReactNode;
+}) {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(1, Math.max(0, progress));
+  const dash = pct * circ;
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: "rotate(-90deg)", position: "absolute" }}
+      >
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={bg} strokeWidth={stroke} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`}
+          style={{ transition: "stroke-dasharray 0.4s ease" }}
+        />
+      </svg>
+      {children && <div className="relative z-10">{children}</div>}
+    </div>
+  );
+}
+
+/** Legacy horizontal progress bar — kept for simple meters. */
 export function ProgressBar({
   progress,
   status,
+  color,
 }: {
   progress: number;
   status: "normal" | "warning" | "over";
+  color?: string;
 }) {
   const pct = Math.min(100, Math.max(0, progress * 100));
-  const color =
+  const useCustom = color && status !== "over";
+  const fallback =
     status === "over" ? "bg-danger" : status === "warning" ? "bg-warn" : "bg-brand-600";
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-      <div className={cx("h-full rounded-full transition-all", color)} style={{ width: `${pct}%` }} />
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+      <div
+        className={cx("h-full rounded-full transition-all", useCustom ? "" : fallback)}
+        style={{ width: `${pct}%`, ...(useCustom ? { backgroundColor: color } : {}) }}
+      />
+    </div>
+  );
+}
+
+/** Tuile colorée contenant le pictogramme d'un budget (icône SVG monochrome). */
+export function BudgetTile({
+  icon,
+  bg,
+  color,
+  size = 44,
+}: {
+  icon: string;
+  bg: string;
+  /** Couleur de l'icône SVG (bar color du budget). */
+  color?: string;
+  size?: number;
+}) {
+  const iconSize = Math.round(size * 0.52);
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-2xl"
+      style={{ width: size, height: size, background: bg }}
+    >
+      <BudgetIcon name={icon} size={iconSize} color={color ?? "#007aff"} />
     </div>
   );
 }
@@ -73,8 +152,8 @@ export function Pill({
   tone?: "neutral" | "brand" | "ok" | "warn" | "danger";
 }) {
   const tones: Record<string, string> = {
-    neutral: "bg-slate-100 text-ink-soft",
-    brand: "bg-brand-50 text-brand-700",
+    neutral: "bg-surface-subtle text-ink-muted",
+    brand: "bg-brand-50 text-brand-600",
     ok: "bg-green-50 text-ok",
     warn: "bg-amber-50 text-warn",
     danger: "bg-red-50 text-danger",
@@ -105,7 +184,7 @@ export function Avatar({ name, src, size = 40 }: { name: string; src?: string; s
   }
   return (
     <div
-      className="flex items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-700"
+      className="flex items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-600"
       style={{ width: size, height: size, fontSize: size * 0.38 }}
     >
       {initials || "?"}
@@ -113,12 +192,101 @@ export function Avatar({ name, src, size = 40 }: { name: string; src?: string; s
   );
 }
 
+/** Mini-courbe décorative et data-driven (SVG, sans dépendance). */
+export function Sparkline({
+  values,
+  className,
+  stroke = "rgba(255,255,255,0.95)",
+  fill = "rgba(255,255,255,0.18)",
+}: {
+  values: number[];
+  className?: string;
+  stroke?: string;
+  fill?: string;
+}) {
+  const w = 120;
+  const h = 40;
+  const series = values.length >= 2 ? values : [0, 0];
+  const max = Math.max(...series, 1);
+  const min = Math.min(...series, 0);
+  const span = max - min || 1;
+  const step = w / (series.length - 1);
+  const pts = series.map((v, i) => {
+    const x = i * step;
+    const y = h - ((v - min) / span) * (h - 6) - 3;
+    return [x, y] as const;
+  });
+  const line = pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const area = `${line} L${w},${h} L0,${h} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className}>
+      <path d={area} fill={fill} />
+      <path d={line} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function EmptyState({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-surface p-8 text-center">
+    <div className="flex flex-col items-center gap-2 rounded-2xl bg-surface p-8 text-center shadow-card">
       <span className="text-3xl">{icon}</span>
-      <p className="font-medium text-ink">{title}</p>
+      <p className="font-semibold text-ink">{title}</p>
       {hint && <p className="text-sm text-ink-muted">{hint}</p>}
     </div>
+  );
+}
+
+/** Donut multi-segments (SVG) pour les répartitions. */
+export function Donut({
+  segments,
+  size = 168,
+  stroke = 24,
+  children,
+}: {
+  segments: Array<{ value: number; color: string }>;
+  size?: number;
+  stroke?: number;
+  children?: ReactNode;
+}) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const total = segments.reduce((acc, s) => acc + s.value, 0) || 1;
+  let offset = 0;
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--surface-muted))" strokeWidth={stroke} />
+          {segments.map((s, i) => {
+            const dash = (s.value / total) * c;
+            const el = (
+              <circle
+                key={i}
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={stroke}
+                strokeDasharray={`${dash} ${c - dash}`}
+                strokeDashoffset={-offset}
+              />
+            );
+            offset += dash;
+            return el;
+          })}
+        </g>
+      </svg>
+      {children && <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>}
+    </div>
+  );
+}
+
+/** Chevron disclosure icon for list rows. */
+export function Chevron() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 shrink-0 text-ink-faint">
+      <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
 import { AdminHeader } from "@/components/layout/AdminHeader";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Card, EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
+import { BudgetTile, Card, EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
+import { tileColorFor } from "@/components/ui/budgetColor";
 import { Sheet } from "@/components/ui/Sheet";
 import { BudgetForm } from "@/components/forms/BudgetForm";
 import { getMonthlyBudgetAmount } from "@/lib/calc/budget";
@@ -49,8 +50,13 @@ export default function AdminBudgetsPage() {
             </thead>
             <tbody>
               {state.budgets.map((b) => (
-                <tr key={b.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2">{b.icon} {b.name}</td>
+                <tr key={b.id} className="border-t border-surface-muted">
+                  <td className="px-3 py-2">
+                    <span className="flex items-center gap-2">
+                      <BudgetTile icon={b.icon} bg={tileColorFor(b.id).bg} color={tileColorFor(b.id).bar} size={28} />
+                      {b.name}
+                    </span>
+                  </td>
                   <td className="px-3 py-2">{TYPE_LABEL[b.type]}</td>
                   <td className="px-3 py-2 text-right">{formatCents(getMonthlyBudgetAmount(b, currentMonth))}</td>
                 </tr>
@@ -63,9 +69,12 @@ export default function AdminBudgetsPage() {
       <div className="space-y-2 sm:hidden">
         {state.budgets.map((b) => (
           <Card key={b.id} onClick={() => router.push(`/budgets/${b.id}`)}>
-            <div className="flex items-center justify-between">
-              <span>{b.icon} {b.name}</span>
-              <span className="font-semibold">{formatCents(getMonthlyBudgetAmount(b, currentMonth))}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-2">
+                <BudgetTile icon={b.icon} bg={tileColorFor(b.id).bg} color={tileColorFor(b.id).bar} size={28} />
+                <span className="truncate">{b.name}</span>
+              </span>
+              <span className="shrink-0 font-semibold">{formatCents(getMonthlyBudgetAmount(b, currentMonth))}</span>
             </div>
             <div className="mt-1">
               <Pill tone="neutral">{TYPE_LABEL[b.type]}</Pill>

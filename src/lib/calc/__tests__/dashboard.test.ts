@@ -99,8 +99,8 @@ describe("contributions et reste personnel", () => {
 });
 
 describe("résumé dashboard complet", () => {
-  it("solde commun estimé réduit par dépenses compte commun", () => {
-    const household = makeHousehold({ manualCommonBalanceCents: 200000 });
+  it("solde commun = contributions du mois − tickets restaurant − dépenses compte commun", () => {
+    const household = makeHousehold();
     const budgets = [makeBudget("courses", "monthly", 40000)];
     const expenses = [
       makeExpense("e1", { budgetId: "courses", amountCents: 30000, paymentSource: "common_account" }),
@@ -113,7 +113,8 @@ describe("résumé dashboard complet", () => {
       expenses,
       month: MONTH,
     });
-    expect(summary.commonBalanceCents).toBe(200000 - 30000);
+    // 40000 contributions − 30000 TR accordés (10000 + 20000) − 30000 dépensés.
+    expect(summary.commonBalanceCents).toBe(40000 - 30000 - 30000);
     expect(summary.commonBalanceStatus).toBe("estimated");
     expect(summary.spentTotalCents).toBe(30000);
     expect(summary.remainingBudgetCents).toBe(40000 - 30000);

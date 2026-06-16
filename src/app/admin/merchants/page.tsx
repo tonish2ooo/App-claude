@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
 import { AdminHeader } from "@/components/layout/AdminHeader";
-import { Avatar, Card, EmptyState, Pill } from "@/components/ui/primitives";
+import { Avatar, Card, Chevron, EmptyState, Pill, SectionTitle } from "@/components/ui/primitives";
 import { Sheet } from "@/components/ui/Sheet";
 import { MerchantForm } from "@/components/forms/MerchantForm";
 import { computeMerchantStats } from "@/lib/calc/merchants";
 import { formatCents } from "@/lib/money";
-import type { Merchant } from "@/lib/types";
+
+// Leaflet touche window : chargement client uniquement.
+const MerchantsMap = dynamic(
+  () => import("@/components/merchants/MerchantsMap").then((m) => m.MerchantsMap),
+  { ssr: false },
+);
 
 export default function AdminMerchantsPage() {
   const app = useAppState();
   const { state } = app;
-  const [editing, setEditing] = useState<Merchant | null>(null);
+  const router = useRouter();
   const [creating, setCreating] = useState(false);
+
+  const hasLocated = state.merchants.some(
+    (m) => m.latitude !== undefined && m.longitude !== undefined,
+  );
 
   return (
     <div className="space-y-3">
@@ -27,14 +38,21 @@ export default function AdminMerchantsPage() {
         }
       />
 
+      {hasLocated && (
+        <>
+          <SectionTitle>Carte</SectionTitle>
+          <MerchantsMap merchants={state.merchants} />
+        </>
+      )}
+
       <div className="space-y-2">
         {state.merchants.map((m) => {
           const stats = computeMerchantStats(m.id, state.expenses);
           return (
-            <Card key={m.id} onClick={() => setEditing(m)}>
+            <Card key={m.id} onClick={() => router.push(`/merchants/${m.id}`)}>
               <div className="flex items-center gap-3">
                 <Avatar name={m.name} src={m.logoUrl ?? m.photoUrl} />
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">{m.name}</p>
                   <p className="text-xs text-ink-muted">
                     {stats.expenseCount} dépense{stats.expenseCount > 1 ? "s" : ""}
@@ -43,6 +61,7 @@ export default function AdminMerchantsPage() {
                   </p>
                 </div>
                 {!m.active && <Pill tone="neutral">Inactif</Pill>}
+                <Chevron />
               </div>
             </Card>
           );
@@ -52,24 +71,6 @@ export default function AdminMerchantsPage() {
 
       <Sheet open={creating} onClose={() => setCreating(false)} title="Nouvelle enseigne">
         <MerchantForm onDone={() => setCreating(false)} />
-      </Sheet>
-
-      <Sheet open={editing !== null} onClose={() => setEditing(null)} title="Fiche enseigne">
-        {editing && (
-          <div>
-            <MerchantForm merchant={editing} onDone={() => setEditing(null)} />
-            <button
-              type="button"
-              className="btn-danger mt-3 w-full"
-              onClick={() => {
-                app.removeMerchant(editing.id);
-                setEditing(null);
-              }}
-            >
-              Supprimer l&apos;enseigne
-            </button>
-          </div>
-        )}
       </Sheet>
     </div>
   );

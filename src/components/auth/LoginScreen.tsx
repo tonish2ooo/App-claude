@@ -57,7 +57,7 @@ export function LoginScreen() {
     <div className="app-shell items-center justify-center px-6 py-10">
       <div className="w-full space-y-6">
         <div className="text-center">
-          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-600 text-3xl text-white shadow-fab">
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-3xl bg-hero text-3xl text-white shadow-hero">
             🔐
           </div>
           <h1 className="text-2xl font-bold">Connexion</h1>

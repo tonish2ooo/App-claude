@@ -27,6 +27,24 @@ export function migrateState(raw: unknown): LocalAppState | null {
     };
   }
 
+  // v3 -> v4 : abonnements récurrents et objectifs d'épargne.
+  if ((state.version ?? 1) < 4) {
+    migrated = {
+      ...migrated,
+      recurringExpenses: migrated.recurringExpenses ?? [],
+      materializedRecurring: migrated.materializedRecurring ?? [],
+      savingsGoals: migrated.savingsGoals ?? [],
+    };
+  }
+
+  // v4 -> v5 : clôtures mensuelles.
+  if ((state.version ?? 1) < 5) {
+    migrated = {
+      ...migrated,
+      monthClosures: migrated.monthClosures ?? [],
+    };
+  }
+
   if (!migrated.household) return null;
 
   const result: LocalAppState = {
@@ -38,6 +56,10 @@ export function migrateState(raw: unknown): LocalAppState | null {
     provisions: migrated.provisions ?? [],
     merchants: migrated.merchants ?? [],
     expenses: migrated.expenses ?? [],
+    recurringExpenses: migrated.recurringExpenses ?? [],
+    materializedRecurring: migrated.materializedRecurring ?? [],
+    savingsGoals: migrated.savingsGoals ?? [],
+    monthClosures: migrated.monthClosures ?? [],
     passkeys: migrated.passkeys ?? [],
     onboardingComplete: migrated.onboardingComplete ?? false,
     currentUserId: migrated.currentUserId ?? null,

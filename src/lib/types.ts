@@ -176,6 +176,11 @@ export interface Merchant {
   address?: string;
   phone?: string;
   category: MerchantCategory;
+  /** Budget associé par défaut (pré-rempli à la création d'une dépense). */
+  defaultBudgetId?: string;
+  /** Coordonnées géographiques (capturées via le GPS de l'appareil). */
+  latitude?: number;
+  longitude?: number;
   logoUrl?: string;
   photoUrl?: string;
   active: boolean;
@@ -197,7 +202,7 @@ export interface MerchantStats {
 // ---------------------------------------------------------------------------
 
 export type ExpensePaymentSource = "common_account" | "meal_voucher";
-export type ExpenseSource = "manual" | "bank" | "import";
+export type ExpenseSource = "manual" | "bank" | "import" | "recurring";
 
 export interface Expense {
   id: string;
@@ -215,7 +220,57 @@ export interface Expense {
   note?: string;
   /** Architecture seulement : référence vers un justificatif. */
   receiptUrl?: string;
+  /** Étiquettes transverses pour analyser au-delà du budget. */
+  tags?: string[];
+  /** Dépense planifiée (à venir) : exclue des dépenses réalisées tant que true. */
+  planned?: boolean;
   source: ExpenseSource;
+  /** Renseigné si la dépense a été générée depuis un abonnement récurrent. */
+  recurringId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Dépenses récurrentes (abonnements / charges fixes)
+// ---------------------------------------------------------------------------
+
+export interface RecurringExpense {
+  id: string;
+  householdId: string;
+  label: string;
+  amountCents: Cents;
+  merchantId?: string;
+  budgetId?: string;
+  /** Utilisateur à qui la dépense est rattachée (payeur). */
+  userId: string;
+  paymentSource: ExpensePaymentSource;
+  splitRule: BudgetSplitRule;
+  /** Jour du mois où la dépense est créée (1..28). */
+  dayOfMonth: number;
+  /** Premier mois d'application "YYYY-MM" (la génération ne remonte pas avant). */
+  startMonth: Month;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Objectifs d'épargne
+// ---------------------------------------------------------------------------
+
+export interface SavingsGoal {
+  id: string;
+  householdId: string;
+  name: string;
+  icon: string;
+  targetCents: Cents;
+  /** Montant déjà épargné. */
+  currentCents: Cents;
+  /** Échéance visée "YYYY-MM-DD" (optionnelle). */
+  targetDate?: string;
+  /** Budget d'épargne associé (optionnel). */
+  budgetId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -233,7 +288,7 @@ export interface ContributionSummary {
   incomeSharePct: number;
   /** Contribution totale aux budgets sur le mois. */
   contributionTotalCents: Cents;
-  /** Reste personnel total = revenu - contribution. */
+  /** Argent de poche = revenu total - contribution. */
   remainingTotalCents: Cents;
   /** Reste argent = salaire - part de contribution financée en argent. */
   remainingMoneyCents: Cents;
@@ -273,6 +328,8 @@ export interface MonthlyDashboardSummary {
   remainingBudgetCents: Cents;
   /** Solde du compte commun (synchronisé / estimé / manuel). */
   commonBalanceCents: Cents;
+  /** Somme totale alimentant le compte commun ce mois (contributions − tickets restaurant). */
+  commonAccountTotalCents: Cents;
   commonBalanceStatus: "synced" | "estimated" | "manual";
   contributions: ContributionSummary[];
   budgetProgress: BudgetProgress[];
@@ -309,10 +366,26 @@ export interface PasskeyCredential {
 export type BankConnectionMode = "manual" | "connected" | "demo";
 
 // ---------------------------------------------------------------------------
+// Clôture mensuelle (bilan figé)
+// ---------------------------------------------------------------------------
+
+export interface MonthClosure {
+  id: string;
+  householdId: string;
+  month: Month;
+  closedAt: string;
+  budgetTotalCents: Cents;
+  spentTotalCents: Cents;
+  byBudget: Array<{ budgetId: string; plannedCents: Cents; spentCents: Cents }>;
+  /** Virements de rééquilibrage figés à la clôture. */
+  settlementTransfers: Array<{ fromUserId: string; toUserId: string; amountCents: Cents }>;
+}
+
+// ---------------------------------------------------------------------------
 // État applicatif persistant (localStorage)
 // ---------------------------------------------------------------------------
 
-export const APP_STATE_VERSION = 3;
+export const APP_STATE_VERSION = 5;
 
 export interface LocalAppState {
   version: number;
@@ -323,6 +396,11 @@ export interface LocalAppState {
   provisions: MonthlyProvision[];
   merchants: Merchant[];
   expenses: Expense[];
+  recurringExpenses: RecurringExpense[];
+  /** Clés "recurringId:YYYY-MM" déjà matérialisées (anti-doublon, append-only). */
+  materializedRecurring: string[];
+  savingsGoals: SavingsGoal[];
+  monthClosures: MonthClosure[];
   passkeys: PasskeyCredential[];
   /** Onboarding terminé. */
   onboardingComplete: boolean;

@@ -57,6 +57,39 @@ export function formatMonthLabel(month: Month): string {
   }).format(date);
 }
 
+/** Libellé lisible d'une date "YYYY-MM-DD" (ex : "12 juin 2026"). */
+export function formatDateLabel(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1, d);
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+/** Liste de n mois consécutifs se terminant par `endMonth` (ordre croissant). */
+export function lastNMonths(endMonth: Month, n: number): Month[] {
+  const out: Month[] = [];
+  let m = endMonth;
+  for (let i = 0; i < n; i += 1) {
+    out.unshift(m);
+    m = previousMonth(m);
+  }
+  return out;
+}
+
+/** Mois de l'année de `endMonth`, de janvier jusqu'à `endMonth` inclus. */
+export function monthsOfYearUpTo(endMonth: Month): Month[] {
+  const year = endMonth.slice(0, 4);
+  const end = Number(endMonth.slice(5, 7)) || 1;
+  const out: Month[] = [];
+  for (let m = 1; m <= end; m += 1) out.push(`${year}-${String(m).padStart(2, "0")}`);
+  return out;
+}
+
 /** Compare deux mois : <0 si a avant b, 0 si égaux, >0 si a après b. */
 export function compareMonths(a: Month, b: Month): number {
   return a < b ? -1 : a > b ? 1 : 0;
