@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, BudgetTile, Card, Chevron, EmptyState, SectionTitle } from "@/components/ui/primitives";
+import { Amount, Avatar, BudgetTile, Card, Chevron, EmptyState, SectionTitle } from "@/components/ui/primitives";
 import { Select, TextInput } from "@/components/ui/fields";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { contributionSummaries } from "@/lib/calc/dashboard";
@@ -24,6 +24,7 @@ interface ActivityItem {
   userId?: string;
   merchantId?: string;
   budgetId?: string;
+  logoUrl?: string;
   search: string;
 }
 
@@ -79,7 +80,8 @@ export default function ActivityPage() {
     for (const e of monthExpenses) {
       const isMeal = e.paymentSource === "meal_voucher";
       const kind: Exclude<Filter, "all"> = isMeal ? "meal_voucher" : "expense";
-      const title = merchantName(e.merchantId);
+      const merchant = state.merchants.find((m) => m.id === e.merchantId);
+      const title = merchant?.name ?? "Sans enseigne";
       const subtitle = `${budgetName(e.budgetId)} · ${userName(e.userId)}`;
       result.push({
         id: e.id,
@@ -92,6 +94,7 @@ export default function ActivityPage() {
         userId: e.userId,
         merchantId: e.merchantId,
         budgetId: e.budgetId,
+        logoUrl: merchant?.logoUrl ?? merchant?.photoUrl,
         search: `${title} ${subtitle} ${(e.tags ?? []).join(" ")}`.toLowerCase(),
       });
     }
@@ -290,7 +293,11 @@ export default function ActivityPage() {
                     onClick={editable ? () => setOpenExpenseId(item.id) : undefined}
                     className="flex w-full items-center gap-3 text-left disabled:cursor-default"
                   >
-                    <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
+                    {item.logoUrl ? (
+                      <Avatar name={item.title} src={item.logoUrl} size={40} />
+                    ) : (
+                      <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{item.title}</p>
                       <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>

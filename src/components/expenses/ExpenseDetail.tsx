@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useAppState } from "@/state/AppStateContext";
-import { Amount, BudgetTile, Pill } from "@/components/ui/primitives";
+import { Amount, Avatar, BudgetTile, Pill } from "@/components/ui/primitives";
 import { tileColorFor } from "@/components/ui/budgetColor";
 import { splitAmount } from "@/lib/calc/contributions";
 import { formatCents } from "@/lib/money";
@@ -45,6 +45,7 @@ export function ExpenseDetail({
   const shares = splitAmount(expense.amountCents, expense.splitRule, activeUsers, state.incomes, month);
   const isMeal = expense.paymentSource === "meal_voucher";
   const tile = budget ? tileColorFor(budget.id) : { bg: "#f2f2f7", bar: "#8e8e93" };
+  const merchantLogo = merchant?.logoUrl ?? merchant?.photoUrl;
 
   function remove() {
     if (typeof window !== "undefined" && !window.confirm("Supprimer cette dépense ?")) return;
@@ -60,7 +61,11 @@ export function ExpenseDetail({
     <div>
       {/* En-tête : montant + enseigne + date */}
       <div className="flex items-center gap-3">
-        <BudgetTile icon={budget?.icon ?? "package"} bg={tile.bg} color={tile.bar} size={52} />
+        {merchantLogo ? (
+          <Avatar name={merchant?.name ?? "Enseigne"} src={merchantLogo} size={52} />
+        ) : (
+          <BudgetTile icon={budget?.icon ?? "package"} bg={tile.bg} color={tile.bar} size={52} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-lg font-bold">{merchant?.name ?? "Sans enseigne"}</p>
