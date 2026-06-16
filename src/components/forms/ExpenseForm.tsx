@@ -7,6 +7,7 @@ import { SplitEditor } from "@/components/forms/SplitEditor";
 import { centsToInput, parseAmountToCents } from "@/lib/money";
 import { todayIso } from "@/lib/date";
 import { readFileAsDataUrl } from "@/lib/file";
+import { scanReceipt } from "@/lib/ocr";
 import type { BudgetSplitRule, Expense, ExpensePaymentSource } from "@/lib/types";
 
 export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?: Expense }) {
@@ -38,6 +39,7 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
   const [tags, setTags] = useState<string[]>(expense?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [receiptUrl, setReceiptUrl] = useState<string | undefined>(expense?.receiptUrl);
+  const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "done" | "error">("idle");
 
   const allTags = Array.from(new Set(state.expenses.flatMap((e) => e.tags ?? []))).sort();
   const suggestions = allTags.filter((t) => !tags.includes(t)).slice(0, 8);
@@ -56,7 +58,33 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
 
   async function onReceipt(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setReceiptUrl(await readFileAsDataUrl(file));
+    if (file) {
+      setReceiptUrl(await readFileAsDataUrl(file));
+      setScanStatus("idle");
+    }
+  }
+
+  async function scan() {
+    if (!receiptUrl) return;
+    setScanStatus("scanning");
+    try {
+      const res = await scanReceipt(receiptUrl);
+      if (res.amountCents) setAmount(centsToInput(res.amountCents));
+      if (res.date) setDate(res.date);
+      if (res.header) {
+        const h = res.header.toLowerCase();
+        const match = state.merchants.find((m) => m.name && h.includes(m.name.toLowerCase()));
+        if (match) {
+          setMerchantId(match.id);
+          if (match.defaultBudgetId) setBudgetId(match.defaultBudgetId);
+        } else if (!merchantId) {
+          setNewMerchant(res.header.split(" ").slice(0, 3).join(" "));
+        }
+      }
+      setScanStatus("done");
+    } catch {
+      setScanStatus("error");
+    }
   }
 
   const amountCents = parseAmountToCents(amount);
@@ -257,9 +285,25 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
           <div className="space-y-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={receiptUrl} alt="Justificatif" className="max-h-48 w-full rounded-xl object-contain" />
-            <button type="button" className="text-xs font-medium text-danger" onClick={() => setReceiptUrl(undefined)}>
-              Retirer la photo
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={scanStatus === "scanning"}
+                onClick={scan}
+              >
+                {scanStatus === "scanning" ? "Lecture du ticket…" : "🔍 Scanner le ticket"}
+              </button>
+              <button type="button" className="text-xs font-medium text-danger" onClick={() => setReceiptUrl(undefined)}>
+                Retirer
+              </button>
+            </div>
+            {scanStatus === "done" && (
+              <p className="text-xs text-ok">Ticket lu — vérifie le montant, la date et l'enseigne pré-remplis.</p>
+            )}
+            {scanStatus === "error" && (
+              <p className="text-xs text-danger">Lecture impossible. Réessaie avec une photo plus nette.</p>
+            )}
           </div>
         ) : (
           <input type="file" accept="image/*" capture="environment" onChange={onReceipt} className="text-sm" />
