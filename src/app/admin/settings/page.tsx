@@ -6,6 +6,7 @@ import { AdminHeader } from "@/components/layout/AdminHeader";
 import { Card } from "@/components/ui/primitives";
 import { Field, Segmented, TextInput } from "@/components/ui/fields";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
+import { CloudSync } from "@/components/settings/CloudSync";
 import { todayIso } from "@/lib/date";
 import type { AppMode } from "@/lib/types";
 
@@ -87,6 +88,8 @@ export default function AdminSettingsPage() {
           <ThemeToggle />
         </Field>
       </Card>
+
+      <CloudSync />
 
       <Card className="space-y-2">
         <p className="text-sm font-medium">Sauvegarde</p>

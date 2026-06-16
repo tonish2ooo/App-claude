@@ -15,8 +15,18 @@ renseignées. Aucune clé n'est stockée dans le code.
 
 ## 2. Appliquer le schéma
 
-Dans le **SQL Editor** de Supabase, exécutez le contenu de
-`supabase/migrations/0001_init.sql` (ou `supabase db push` avec la CLI).
+Pour la **sauvegarde / synchronisation cloud**, exécutez dans le **SQL Editor**
+le contenu de `supabase/migrations/0002_state.sql` (table `app_state` + RLS).
+C'est le seul schéma nécessaire pour la sauvegarde cloud.
+
+Le schéma normalisé `supabase/migrations/0001_init.sql` (tables séparées avec
+RLS par foyer) reste **optionnel**, pour une évolution future vers un partage
+multi-comptes.
+
+### Utiliser la synchronisation
+Une fois `.env.local` renseigné et le schéma appliqué, ouvrez
+**Profil → Paramètres → Synchronisation cloud** : créez un compte / connectez-vous,
+puis « Sauvegarder dans le cloud » et « Restaurer depuis le cloud ».
 
 Le schéma crée les tables (`households`, `members`, `incomes`, `budgets`,
 `provisions`, `merchants`, `expenses`, `passkeys`) et active la **RLS** :
