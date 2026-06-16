@@ -154,7 +154,7 @@ export function BottomNav() {
               <BudgetIcon
                 name={item.icon}
                 size={20}
-                color={item.primary ? "#007aff" : "#3c3c43"}
+                color={item.primary ? "#13C8A0" : "#3c3c43"}
               />
               {item.label}
             </button>

@@ -59,7 +59,7 @@ export function GoalForm({ onDone, goal }: { onDone: () => void; goal?: SavingsG
                 (icon === n ? "bg-brand-50 ring-2 ring-brand-600" : "bg-surface-subtle")
               }
             >
-              <BudgetIcon name={n} size={20} color={icon === n ? "#007aff" : "#8e8e93"} />
+              <BudgetIcon name={n} size={20} color={icon === n ? "#13C8A0" : "#8e8e93"} />
             </button>
           ))}
         </div>

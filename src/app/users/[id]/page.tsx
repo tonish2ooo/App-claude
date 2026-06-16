@@ -85,8 +85,8 @@ export default function UserDetailPage() {
       <div className="mt-2">
         <Card>
           <div className="flex items-center gap-4">
-            <RingProgress progress={insights.incomeSharePct} size={64} stroke={6} color="#007aff">
-              <span className="text-[11px] font-bold" style={{ color: "#007aff" }}>
+            <RingProgress progress={insights.incomeSharePct} size={64} stroke={6} color="#13C8A0">
+              <span className="text-[11px] font-bold" style={{ color: "#13C8A0" }}>
                 {Math.round(insights.incomeSharePct * 100)}%
               </span>
             </RingProgress>

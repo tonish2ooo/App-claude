@@ -54,7 +54,7 @@ export function RingProgress({
   progress,
   size = 44,
   stroke = 4,
-  color = "#007aff",
+  color = "#13C8A0",
   bg = "#e5e5ea",
   children,
 }: {
@@ -139,7 +139,7 @@ export function BudgetTile({
       className="flex shrink-0 items-center justify-center rounded-2xl"
       style={{ width: size, height: size, background: bg }}
     >
-      <BudgetIcon name={icon} size={iconSize} color={color ?? "#007aff"} />
+      <BudgetIcon name={icon} size={iconSize} color={color ?? "#13C8A0"} />
     </div>
   );
 }

@@ -90,7 +90,7 @@ export default function BilanPage() {
             {data.settlement.transfers.map((t, i) => (
               <p key={i} className="text-sm">
                 <span className="font-semibold">{userName(t.fromUserId)}</span> doit{" "}
-                <span className="font-semibold" style={{ color: "#007aff" }}>{formatCents(t.amountCents)}</span> à{" "}
+                <span className="font-semibold" style={{ color: "#13C8A0" }}>{formatCents(t.amountCents)}</span> à{" "}
                 <span className="font-semibold">{userName(t.toUserId)}</span>
               </p>
             ))}

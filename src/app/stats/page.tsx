@@ -52,7 +52,7 @@ export default function StatsPage() {
   const maxMonthly = Math.max(...stats.monthlyTotals.map((d) => d.totalCents), 1);
   const payTotal = stats.byPaymentSource.commonAccountCents + stats.byPaymentSource.mealVoucherCents;
   const commonPct = payTotal > 0 ? stats.byPaymentSource.commonAccountCents / payTotal : 1;
-  const userColors = ["#007aff", "#ff2d55", "#34c759", "#ff9500"];
+  const userColors = ["#13C8A0", "#ff2d55", "#34c759", "#ff9500"];
 
   return (
     <div className="space-y-1">
@@ -133,7 +133,7 @@ export default function StatsPage() {
                     className="w-full max-w-[26px] rounded-t-md"
                     style={{
                       height: `${Math.max(3, (dpt.totalCents / maxMonthly) * 84)}px`,
-                      background: isCurrent ? "#007aff" : "rgb(var(--surface-muted))",
+                      background: isCurrent ? "#13C8A0" : "rgb(var(--surface-muted))",
                     }}
                     title={formatCents(dpt.totalCents)}
                   />
@@ -179,11 +179,11 @@ export default function StatsPage() {
           <SectionTitle>Mode de paiement</SectionTitle>
           <Card>
             <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-              <div style={{ width: `${commonPct * 100}%`, background: "#007aff" }} />
+              <div style={{ width: `${commonPct * 100}%`, background: "#13C8A0" }} />
               <div style={{ width: `${(1 - commonPct) * 100}%`, background: "#32ade6" }} />
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs">
-              <span style={{ color: "#007aff" }}>Compte commun {formatCents(stats.byPaymentSource.commonAccountCents)}</span>
+              <span style={{ color: "#13C8A0" }}>Compte commun {formatCents(stats.byPaymentSource.commonAccountCents)}</span>
               <span style={{ color: "#32ade6" }}>Tickets resto {formatCents(stats.byPaymentSource.mealVoucherCents)}</span>
             </div>
           </Card>

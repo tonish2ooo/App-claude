@@ -11,7 +11,7 @@ import type { Merchant } from "@/lib/types";
 function pinIcon(label: string): L.DivIcon {
   return L.divIcon({
     className: "",
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50% 50% 50% 0;background:#007aff;color:#fff;font:600 12px/1 -apple-system,sans-serif;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;"><span style="transform:rotate(45deg)">${label}</span></div>`,
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50% 50% 50% 0;background:#13C8A0;color:#fff;font:600 12px/1 -apple-system,sans-serif;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;"><span style="transform:rotate(45deg)">${label}</span></div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 28],
   });
