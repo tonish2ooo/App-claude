@@ -236,6 +236,52 @@ export function EmptyState({ icon, title, hint }: { icon: string; title: string;
   );
 }
 
+/** Donut multi-segments (SVG) pour les répartitions. */
+export function Donut({
+  segments,
+  size = 168,
+  stroke = 24,
+  children,
+}: {
+  segments: Array<{ value: number; color: string }>;
+  size?: number;
+  stroke?: number;
+  children?: ReactNode;
+}) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const total = segments.reduce((acc, s) => acc + s.value, 0) || 1;
+  let offset = 0;
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--surface-muted))" strokeWidth={stroke} />
+          {segments.map((s, i) => {
+            const dash = (s.value / total) * c;
+            const el = (
+              <circle
+                key={i}
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={stroke}
+                strokeDasharray={`${dash} ${c - dash}`}
+                strokeDashoffset={-offset}
+              />
+            );
+            offset += dash;
+            return el;
+          })}
+        </g>
+      </svg>
+      {children && <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>}
+    </div>
+  );
+}
+
 /** Chevron disclosure icon for list rows. */
 export function Chevron() {
   return (

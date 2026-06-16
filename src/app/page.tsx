@@ -61,6 +61,13 @@ export default function DashboardPage() {
   const ringColor =
     globalStatus === "over" ? "#ff3b30" : globalStatus === "warning" ? "#ff9500" : "#007aff";
 
+  // Budgets dépassés (>100 %) ou proches (>=80 %).
+  const budgetAlerts = summary.budgetProgress
+    .filter((p) => p.progress >= 0.8)
+    .map((p) => ({ progress: p.progress, budget: budgets.find((b) => b.id === p.budgetId) }))
+    .filter((x): x is { progress: number; budget: (typeof budgets)[number] } => Boolean(x.budget))
+    .sort((a, b) => b.progress - a.progress);
+
   return (
     <div className="space-y-1">
       <MonthSwitcher />
@@ -78,6 +85,31 @@ export default function DashboardPage() {
           >
             Déclarer les revenus du mois
           </button>
+        </div>
+      )}
+
+      {/* Alertes de dépassement de budget */}
+      {budgetAlerts.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+          <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-warn">
+            Budgets à surveiller
+          </p>
+          {budgetAlerts.map(({ budget, progress }) => {
+            const over = progress > 1;
+            return (
+              <button
+                key={budget.id}
+                type="button"
+                onClick={() => router.push(`/budgets/${budget.id}`)}
+                className="flex w-full items-center justify-between px-1 py-1.5 text-left text-sm"
+              >
+                <span className="truncate font-medium">{budget.name}</span>
+                <span className="ml-2 shrink-0 font-semibold" style={{ color: over ? "#ff3b30" : "#ff9500" }}>
+                  {Math.round(progress * 100)} % {over ? "· dépassé" : ""}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -286,6 +318,16 @@ export default function DashboardPage() {
           })
         )}
       </Card>
+
+      <div className="mt-3">
+        <Card onClick={() => router.push("/stats")}>
+          <div className="flex items-center gap-3">
+            <span className="text-xl">📈</span>
+            <p className="flex-1 font-medium">Statistiques du foyer</p>
+            <Chevron />
+          </div>
+        </Card>
+      </div>
 
       <Sheet open={incomeUserId !== null} onClose={() => setIncomeUserId(null)} title="Déclarer un revenu">
         {incomeUserId !== null && (

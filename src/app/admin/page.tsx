@@ -10,6 +10,7 @@ const ENTRIES = [
   { href: "/admin/budgets", icon: "📊", label: "Budgets", desc: "Enveloppes et provisions" },
   { href: "/admin/recurring", icon: "🔁", label: "Abonnements", desc: "Dépenses récurrentes automatiques" },
   { href: "/admin/merchants", icon: "🏬", label: "Enseignes", desc: "Commerçants et fournisseurs" },
+  { href: "/stats", icon: "📈", label: "Statistiques", desc: "Répartition, évolution, top enseignes" },
   { href: "/admin/settings", icon: "🏠", label: "Paramètres du foyer", desc: "Mois, devise, mode, solde" },
   { href: "/admin/security", icon: "🔐", label: "Sécurité / connexion", desc: "Connexion rapide, déconnexion" },
 ];
