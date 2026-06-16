@@ -12,7 +12,7 @@ export function computeMerchantStats(
   expenses: Expense[],
 ): MerchantStats {
   const linked = expenses
-    .filter((e) => e.merchantId === merchantId)
+    .filter((e) => e.merchantId === merchantId && !e.planned)
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 
@@ -68,7 +68,7 @@ function daysBetween(a: string, b: string): number {
 
 export function computeMerchantInsights(merchantId: string, expenses: Expense[]): MerchantInsights {
   const linked = expenses
-    .filter((e) => e.merchantId === merchantId)
+    .filter((e) => e.merchantId === merchantId && !e.planned)
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 

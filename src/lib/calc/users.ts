@@ -58,7 +58,7 @@ export function computeUserInsights(params: {
   const incomeSum = userIncomes.reduce((acc, i) => acc + i.salaryCents + i.mealVouchersCents, 0);
   const avgIncomeCents = monthsDeclared > 0 ? Math.round(incomeSum / monthsDeclared) : null;
 
-  const logged = expenses.filter((e) => e.userId === userId);
+  const logged = expenses.filter((e) => e.userId === userId && !e.planned);
   const expensesLoggedCount = logged.length;
   const expensesLoggedTotalCents = logged.reduce((acc, e) => acc + e.amountCents, 0);
 

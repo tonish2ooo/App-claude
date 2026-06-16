@@ -13,6 +13,7 @@ const SOURCE_LABEL: Record<string, string> = {
   manual: "Saisie manuelle",
   bank: "Synchronisation bancaire",
   import: "Import",
+  recurring: "Abonnement",
 };
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -51,17 +52,37 @@ export function ExpenseDetail({
     onDelete();
   }
 
+  function markAsPaid() {
+    app.updateExpense(expense.id, { planned: false, date: new Date().toISOString().slice(0, 10) });
+  }
+
   return (
     <div>
       {/* En-tête : montant + enseigne + date */}
       <div className="flex items-center gap-3">
         <BudgetTile icon={budget?.icon ?? "package"} bg={tile.bg} color={tile.bar} size={52} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-lg font-bold">{merchant?.name ?? "Sans enseigne"}</p>
+          <div className="flex items-center gap-2">
+            <p className="truncate text-lg font-bold">{merchant?.name ?? "Sans enseigne"}</p>
+            {expense.planned && <Pill tone="warn">À venir</Pill>}
+          </div>
           <p className="text-xs text-ink-muted">{formatDateLabel(expense.date)}</p>
         </div>
         <p className="shrink-0 text-2xl font-bold tracking-tight">{formatCents(expense.amountCents)}</p>
       </div>
+
+      {expense.planned && (
+        <button type="button" className="btn-primary mt-3 w-full" onClick={markAsPaid}>
+          Marquer comme payée
+        </button>
+      )}
+
+      {expense.receiptUrl && (
+        <div className="mt-3 overflow-hidden rounded-2xl border border-surface-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={expense.receiptUrl} alt="Justificatif" className="max-h-64 w-full object-contain" />
+        </div>
+      )}
 
       <div className="mt-3 rounded-2xl bg-surface-subtle px-3.5">
         <Row label="Montant">{formatCents(expense.amountCents)}</Row>
@@ -100,6 +121,16 @@ export function ExpenseDetail({
         {expense.note && <Row label="Note">{expense.note}</Row>}
         <Row label="Origine">{SOURCE_LABEL[expense.source] ?? expense.source}</Row>
       </div>
+
+      {expense.tags && expense.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {expense.tags.map((t) => (
+            <span key={t} className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-600">
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Détail de la répartition par personne */}
       {shares.length > 0 && (

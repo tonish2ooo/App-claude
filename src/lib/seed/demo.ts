@@ -114,21 +114,21 @@ export function buildDemoState(): LocalAppState {
 
   // Dépenses réelles de juin (colonne « Réel compte » du tableau), payées
   // depuis le compte commun et rattachées aux budgets correspondants.
-  const realExpenses: Array<{ budgetId: string; amountCents: number; merchantId?: string }> = [
+  const realExpenses: Array<{ budgetId: string; amountCents: number; merchantId?: string; tags?: string[] }> = [
     { budgetId: "budget_loyer", amountCents: 197563 },
     { budgetId: "budget_assurance_solde", amountCents: 12012 },
     { budgetId: "budget_courses", amountCents: 60802, merchantId: "merchant_carrefour" },
     { budgetId: "budget_assurance_maison", amountCents: 6202 },
-    { budgetId: "budget_restaurant", amountCents: 13921, merchantId: "merchant_resto" },
+    { budgetId: "budget_restaurant", amountCents: 13921, merchantId: "merchant_resto", tags: ["sortie"] },
     { budgetId: "budget_boucherie", amountCents: 3556 },
     { budgetId: "budget_voiture", amountCents: 76291 },
     { budgetId: "budget_eau", amountCents: 4360 },
     { budgetId: "budget_drink_market", amountCents: 8495 },
-    { budgetId: "budget_ecole", amountCents: 8700 },
-    { budgetId: "budget_galipettes", amountCents: 9350 },
+    { budgetId: "budget_ecole", amountCents: 8700, tags: ["enfants"] },
+    { budgetId: "budget_galipettes", amountCents: 9350, tags: ["enfants", "loisir"] },
     { budgetId: "budget_charge_voiture", amountCents: 5502 },
     { budgetId: "budget_verisure", amountCents: 5829 },
-    { budgetId: "budget_vetements", amountCents: 17690 },
+    { budgetId: "budget_vetements", amountCents: 17690, tags: ["enfants"] },
     { budgetId: "budget_autre", amountCents: 13219 },
   ];
 
@@ -144,9 +144,28 @@ export function buildDemoState(): LocalAppState {
     date: `${month}-${String((i % 26) + 2).padStart(2, "0")}`,
     budgetId: e.budgetId,
     source: "manual",
+    tags: e.tags,
     createdAt: now,
     updatedAt: now,
   }));
+
+  // Dépense planifiée (à venir) — exclue des dépenses réalisées.
+  const plannedExpense: LocalAppState["expenses"][number] = {
+    id: makeId("exp"),
+    householdId,
+    userId: u1,
+    amountCents: 25000,
+    currency: "EUR",
+    paymentSource: "common_account",
+    splitRule: { mode: "prorata" },
+    date: `${month}-25`,
+    budgetId: "budget_voiture",
+    note: "Révision voiture",
+    source: "manual",
+    planned: true,
+    createdAt: now,
+    updatedAt: now,
+  };
 
   // Historique fictif sur les mois précédents pour étoffer les fiches enseignes
   // (n'affecte pas le mois courant, filtré par mois dans le tableau de bord).
@@ -220,6 +239,7 @@ export function buildDemoState(): LocalAppState {
 
   const expenses: LocalAppState["expenses"] = [
     ...currentExpenses,
+    plannedExpense,
     ...buildHistory(carrefourHistory, "merchant_carrefour", "budget_courses"),
     ...buildHistory(bistrotHistory, "merchant_resto", "budget_restaurant"),
   ];

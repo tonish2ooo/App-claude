@@ -25,7 +25,7 @@ export function computeHouseholdStats(params: {
 }): HouseholdStats {
   const { expenses, months, topMerchantsLimit = 5 } = params;
   const monthSet = new Set(months);
-  const inPeriod = expenses.filter((e) => monthSet.has(e.date.slice(0, 7)));
+  const inPeriod = expenses.filter((e) => !e.planned && monthSet.has(e.date.slice(0, 7)));
   // Cohérent avec le reste de l'app : on ne compte que les dépenses rattachées à un budget.
   const budgetLinked = inPeriod.filter((e) => e.budgetId);
 

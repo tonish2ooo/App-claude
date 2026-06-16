@@ -220,6 +220,10 @@ export interface Expense {
   note?: string;
   /** Architecture seulement : référence vers un justificatif. */
   receiptUrl?: string;
+  /** Étiquettes transverses pour analyser au-delà du budget. */
+  tags?: string[];
+  /** Dépense planifiée (à venir) : exclue des dépenses réalisées tant que true. */
+  planned?: boolean;
   source: ExpenseSource;
   /** Renseigné si la dépense a été générée depuis un abonnement récurrent. */
   recurringId?: string;
