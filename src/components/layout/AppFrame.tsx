@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Onboarding } from "@/components/onboarding/Onboarding";
 import { LoginScreen } from "@/components/auth/LoginScreen";
 import { ThemeButton } from "@/components/settings/ThemeButton";
+import { AlertBadge } from "@/components/layout/AlertBadge";
 import { Avatar } from "@/components/ui/primitives";
 
 export function AppFrame({ children }: { children: ReactNode }) {
@@ -35,7 +36,10 @@ export function AppFrame({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 flex items-center justify-between bg-surface-subtle/90 px-4 py-3 backdrop-blur-xl">
         <div>
           <p className="text-[13px] text-ink-muted">Bonjour</p>
-          <p className="text-xl font-bold tracking-tight">{names}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xl font-bold tracking-tight">{names}</p>
+            <AlertBadge />
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <ThemeButton />

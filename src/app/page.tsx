@@ -61,17 +61,6 @@ export default function DashboardPage() {
   const ringColor =
     globalStatus === "over" ? "#ff3b30" : globalStatus === "warning" ? "#ff9500" : "#007aff";
 
-  // Budgets dépassés (>100 %) ou proches (>=80 %).
-  const overCount = summary.budgetProgress.filter((p) => p.progress > 1).length;
-  const nearCount = summary.budgetProgress.filter((p) => p.progress >= 0.8 && p.progress <= 1).length;
-  const alertColor = overCount > 0 ? "#ff3b30" : nearCount > 0 ? "#ff9500" : "#34c759";
-  const alertLabel =
-    overCount > 0
-      ? `${overCount} budget${overCount > 1 ? "s" : ""} dépassé${overCount > 1 ? "s" : ""}`
-      : nearCount > 0
-      ? `${nearCount} budget${nearCount > 1 ? "s" : ""} à surveiller`
-      : "Budgets sous contrôle";
-
   return (
     <div className="space-y-1">
       <MonthSwitcher />
@@ -91,26 +80,6 @@ export default function DashboardPage() {
           </button>
         </div>
       )}
-
-      {/* Bouton d'alertes budgets (couleur selon l'état) */}
-      <div className="mt-3">
-        <button
-          type="button"
-          onClick={() => router.push("/alerts")}
-          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-white shadow-card transition active:scale-[0.99]"
-          style={{ background: alertColor }}
-        >
-          <span className="flex items-center gap-2 font-semibold">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9" className="h-5 w-5">
-              <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {alertLabel}
-          </span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="h-4 w-4">
-            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
 
       {/* Hero metric card — budget restant */}
       <div className="mt-3">
