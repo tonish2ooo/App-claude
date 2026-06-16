@@ -1,57 +1,67 @@
 import type { Budget, Cents, Expense, Month } from "../types";
-import { spentForBudget, spentTotalForMonth } from "./expenses";
-import { previousMonth } from "../date";
 
 export interface HouseholdStats {
-  month: Month;
-  totalThisMonthCents: Cents;
-  /** Dépenses du mois par budget (budgetId vide = sans budget), triées décroissant. */
+  months: Month[];
+  totalCents: Cents;
+  expenseCount: number;
+  avgPerMonthCents: Cents;
+  avgPerExpenseCents: Cents | null;
+  /** Dépenses de la période par budget (budgetId vide = sans budget), triées décroissant. */
   byBudget: Array<{ budgetId: string; spentCents: Cents }>;
-  /** Total des dépenses par mois (chronologique). */
+  /** Dépenses de la période par personne (payeur), triées décroissant. */
+  byUser: Array<{ userId: string; spentCents: Cents }>;
+  byPaymentSource: { commonAccountCents: Cents; mealVoucherCents: Cents };
+  /** Total des dépenses par mois (chronologique, sur la période). */
   monthlyTotals: Array<{ month: Month; totalCents: Cents }>;
-  /** Enseignes les plus dépensières (toutes périodes). */
+  /** Enseignes les plus dépensières sur la période. */
   topMerchants: Array<{ merchantId: string; totalCents: Cents; count: number }>;
 }
 
 export function computeHouseholdStats(params: {
   budgets: Budget[];
   expenses: Expense[];
-  month: Month;
-  monthsBack?: number;
+  months: Month[];
   topMerchantsLimit?: number;
 }): HouseholdStats {
-  const { budgets, expenses, month, monthsBack = 6, topMerchantsLimit = 5 } = params;
+  const { expenses, months, topMerchantsLimit = 5 } = params;
+  const monthSet = new Set(months);
+  const inPeriod = expenses.filter((e) => monthSet.has(e.date.slice(0, 7)));
+  // Cohérent avec le reste de l'app : on ne compte que les dépenses rattachées à un budget.
+  const budgetLinked = inPeriod.filter((e) => e.budgetId);
 
-  // Répartition du mois par budget.
-  const byBudget: Array<{ budgetId: string; spentCents: Cents }> = [];
-  let budgetedTotal = 0;
-  for (const b of budgets) {
-    const spent = spentForBudget(expenses, b.id, month);
-    if (spent > 0) {
-      byBudget.push({ budgetId: b.id, spentCents: spent });
-      budgetedTotal += spent;
-    }
-  }
-  const totalThisMonthCents = spentTotalForMonth(expenses, month);
-  const leftover = totalThisMonthCents - budgetedTotal;
-  if (leftover > 0) byBudget.push({ budgetId: "", spentCents: leftover });
-  byBudget.sort((a, b) => b.spentCents - a.spentCents);
+  const totalCents = budgetLinked.reduce((acc, e) => acc + e.amountCents, 0);
+  const expenseCount = budgetLinked.length;
+  const avgPerMonthCents = months.length > 0 ? Math.round(totalCents / months.length) : 0;
+  const avgPerExpenseCents = expenseCount > 0 ? Math.round(totalCents / expenseCount) : null;
 
-  // Total par mois sur les N derniers mois (mois courant inclus).
-  const months: Month[] = [];
-  let m = month;
-  for (let i = 0; i < monthsBack; i += 1) {
-    months.unshift(m);
-    m = previousMonth(m);
-  }
-  const monthlyTotals = months.map((mth) => ({
-    month: mth,
-    totalCents: spentTotalForMonth(expenses, mth),
+  const sumBy = (key: (e: Expense) => string) => {
+    const map = new Map<string, number>();
+    for (const e of budgetLinked) map.set(key(e), (map.get(key(e)) ?? 0) + e.amountCents);
+    return map;
+  };
+
+  const byBudget = [...sumBy((e) => e.budgetId ?? "").entries()]
+    .map(([budgetId, spentCents]) => ({ budgetId, spentCents }))
+    .sort((a, b) => b.spentCents - a.spentCents);
+
+  const byUser = [...sumBy((e) => e.userId).entries()]
+    .map(([userId, spentCents]) => ({ userId, spentCents }))
+    .sort((a, b) => b.spentCents - a.spentCents);
+
+  const commonAccountCents = budgetLinked
+    .filter((e) => e.paymentSource === "common_account")
+    .reduce((acc, e) => acc + e.amountCents, 0);
+  const byPaymentSource = { commonAccountCents, mealVoucherCents: totalCents - commonAccountCents };
+
+  const monthlyTotals = months.map((m) => ({
+    month: m,
+    totalCents: budgetLinked
+      .filter((e) => e.date.slice(0, 7) === m)
+      .reduce((acc, e) => acc + e.amountCents, 0),
   }));
 
-  // Top enseignes (toutes périodes).
   const merchantAgg = new Map<string, { totalCents: Cents; count: number }>();
-  for (const e of expenses) {
+  for (const e of inPeriod) {
     if (!e.merchantId) continue;
     const cur = merchantAgg.get(e.merchantId) ?? { totalCents: 0, count: 0 };
     cur.totalCents += e.amountCents;
@@ -63,5 +73,16 @@ export function computeHouseholdStats(params: {
     .sort((a, b) => b.totalCents - a.totalCents)
     .slice(0, topMerchantsLimit);
 
-  return { month, totalThisMonthCents, byBudget, monthlyTotals, topMerchants };
+  return {
+    months,
+    totalCents,
+    expenseCount,
+    avgPerMonthCents,
+    avgPerExpenseCents,
+    byBudget,
+    byUser,
+    byPaymentSource,
+    monthlyTotals,
+    topMerchants,
+  };
 }

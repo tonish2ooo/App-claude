@@ -62,11 +62,15 @@ export default function DashboardPage() {
     globalStatus === "over" ? "#ff3b30" : globalStatus === "warning" ? "#ff9500" : "#007aff";
 
   // Budgets dépassés (>100 %) ou proches (>=80 %).
-  const budgetAlerts = summary.budgetProgress
-    .filter((p) => p.progress >= 0.8)
-    .map((p) => ({ progress: p.progress, budget: budgets.find((b) => b.id === p.budgetId) }))
-    .filter((x): x is { progress: number; budget: (typeof budgets)[number] } => Boolean(x.budget))
-    .sort((a, b) => b.progress - a.progress);
+  const overCount = summary.budgetProgress.filter((p) => p.progress > 1).length;
+  const nearCount = summary.budgetProgress.filter((p) => p.progress >= 0.8 && p.progress <= 1).length;
+  const alertColor = overCount > 0 ? "#ff3b30" : nearCount > 0 ? "#ff9500" : "#34c759";
+  const alertLabel =
+    overCount > 0
+      ? `${overCount} budget${overCount > 1 ? "s" : ""} dépassé${overCount > 1 ? "s" : ""}`
+      : nearCount > 0
+      ? `${nearCount} budget${nearCount > 1 ? "s" : ""} à surveiller`
+      : "Budgets sous contrôle";
 
   return (
     <div className="space-y-1">
@@ -88,30 +92,25 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Alertes de dépassement de budget */}
-      {budgetAlerts.length > 0 && (
-        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
-          <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-warn">
-            Budgets à surveiller
-          </p>
-          {budgetAlerts.map(({ budget, progress }) => {
-            const over = progress > 1;
-            return (
-              <button
-                key={budget.id}
-                type="button"
-                onClick={() => router.push(`/budgets/${budget.id}`)}
-                className="flex w-full items-center justify-between px-1 py-1.5 text-left text-sm"
-              >
-                <span className="truncate font-medium">{budget.name}</span>
-                <span className="ml-2 shrink-0 font-semibold" style={{ color: over ? "#ff3b30" : "#ff9500" }}>
-                  {Math.round(progress * 100)} % {over ? "· dépassé" : ""}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Bouton d'alertes budgets (couleur selon l'état) */}
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => router.push("/alerts")}
+          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-white shadow-card transition active:scale-[0.99]"
+          style={{ background: alertColor }}
+        >
+          <span className="flex items-center gap-2 font-semibold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.9" className="h-5 w-5">
+              <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {alertLabel}
+          </span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="h-4 w-4">
+            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
 
       {/* Hero metric card — budget restant */}
       <div className="mt-3">
