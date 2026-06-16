@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, BudgetTile, Card, Chevron, EmptyState, RingProgress, SectionTitle } from "@/components/ui/primitives";
-import { tileColorFor } from "@/components/ui/budgetColor";
+import { Amount, Card, Chevron, EmptyState, ProgressBar, RingProgress, SectionTitle } from "@/components/ui/primitives";
+import { BudgetRow } from "@/components/budgets/BudgetRow";
+import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { Sheet } from "@/components/ui/Sheet";
 import { IncomeForm } from "@/components/forms/IncomeForm";
 import { buildDashboardSummary } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
-import { formatMonthLabel } from "@/lib/date";
+import { formatMonthLabel, todayIso } from "@/lib/date";
 import { formatCents } from "@/lib/money";
 
 export default function DashboardPage() {
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const { state, currentMonth, activeUsers } = app;
   const [incomeUserId, setIncomeUserId] = useState<string | null>(null);
   const [showMealDetails, setShowMealDetails] = useState(false);
+  const [openExpenseId, setOpenExpenseId] = useState<string | null>(null);
   const router = useRouter();
 
   const summary = useMemo(
@@ -61,6 +63,39 @@ export default function DashboardPage() {
   const ringColor =
     globalStatus === "over" ? "#ff3b30" : globalStatus === "warning" ? "#ff9500" : "#13C8A0";
 
+  // Rythme du mois : reste/jour possible et statut "dans le rythme".
+  const [yy, mm] = currentMonth.split("-").map(Number);
+  const daysInMonth = new Date(yy ?? 1970, mm ?? 1, 0).getDate();
+  const todayStr = todayIso();
+  const dayOfMonth = todayStr.startsWith(currentMonth)
+    ? Number(todayStr.slice(8, 10))
+    : todayStr < `${currentMonth}-01`
+    ? 1
+    : daysInMonth;
+  const daysLeft = Math.max(1, daysInMonth - dayOfMonth);
+  const perDayCents = Math.max(0, Math.round(summary.remainingBudgetCents / daysLeft));
+  const onTrack = summary.spentTotalCents <= summary.budgetTotalCents * (dayOfMonth / daysInMonth);
+  const monthLong = new Intl.DateTimeFormat("fr-FR", { month: "long" }).format(
+    new Date(yy ?? 1970, (mm ?? 1) - 1, 1),
+  );
+  const lastDayLabel = `${daysInMonth} ${monthLong}`;
+
+  // Budgets à surveiller (≥ 80 % ou dépassés), triés.
+  const watchedBudgets = budgets
+    .map((b) => ({ b, p: summary.budgetProgress.find((x) => x.budgetId === b.id) }))
+    .filter((x) => (x.p?.progress ?? 0) >= 0.8)
+    .sort((a, b) => (b.p?.progress ?? 0) - (a.p?.progress ?? 0))
+    .map((x) => x.b);
+
+  // Mouvements à traiter : planifiés (à venir) + dépenses sans budget du mois.
+  const toClassify = state.expenses.filter(
+    (e) =>
+      (e.planned || !e.budgetId) &&
+      (e.planned || e.date.startsWith(currentMonth)),
+  );
+  const merchantName = (id?: string) => state.merchants.find((m) => m.id === id)?.name ?? "Sans enseigne";
+  const budgetName = (id?: string) => state.budgets.find((b) => b.id === id)?.name ?? "À catégoriser";
+
   return (
     <div className="space-y-1">
       <MonthSwitcher />
@@ -96,87 +131,116 @@ export default function DashboardPage() {
                 {Math.round(globalProgress * 100)}%
               </span>
             </RingProgress>
-            <div className="flex-1">
-              <p className="text-[13px] text-ink-muted">Restant ce mois</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] text-ink-muted">Disponible jusqu'au {lastDayLabel}</p>
               <p
-                className="mt-0.5 text-[32px] font-bold leading-none tracking-tight"
+                className="mt-0.5 text-[40px] font-extrabold leading-none tracking-tight"
                 style={{ color: summary.remainingBudgetCents >= 0 ? "#13C8A0" : "#ff3b30" }}
               >
                 <Amount cents={summary.remainingBudgetCents} />
               </p>
               <p className="mt-1 text-xs text-ink-muted">
+                {formatCents(perDayCents)} / jour possible
+              </p>
+              <p className="text-xs text-ink-muted">
                 {formatCents(summary.spentTotalCents)} dépensés sur {formatCents(summary.budgetTotalCents)}
               </p>
             </div>
           </div>
+          <p className="mt-3 text-[13px] font-medium" style={{ color: onTrack ? "#13C8A0" : "#FF9F0A" }}>
+            {Math.round(globalProgress * 100)} % utilisé · {onTrack ? "Vous êtes dans le rythme" : "Au-dessus du rythme"}
+          </p>
+          {watchedBudgets.length > 0 && (
+            <button
+              type="button"
+              onClick={() => router.push("/alerts")}
+              className="mt-2 text-sm font-medium text-brand-600"
+            >
+              Voir les budgets à risque →
+            </button>
+          )}
         </Card>
       </div>
 
-      {/* Solde compte commun */}
-      <div className="mt-2">
-        <Card>
-          <div className="flex items-center gap-4">
-            <RingProgress progress={commonAccountRatio} size={56} stroke={6} color={commonAccountColor}>
-              <span className="text-[10px] font-bold" style={{ color: commonAccountColor }}>
-                {Math.round(commonAccountRatio * 100)}%
-              </span>
-            </RingProgress>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-[13px] text-ink-muted">Compte commun</p>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={
-                    summary.commonBalanceStatus === "synced"
-                      ? { background: "#e8faf0", color: "#34c759" }
-                      : { background: "#f2f2f7", color: "#8e8e93" }
-                  }
-                >
-                  {summary.commonBalanceStatus === "synced" ? "Synchronisé" : "Estimé"}
-                </span>
+      {/* À traiter */}
+      {toClassify.length > 0 && (
+        <>
+          <SectionTitle>À traiter</SectionTitle>
+          <Card className="py-1">
+            {toClassify.map((e, i) => (
+              <div key={e.id}>
+                {i > 0 && <div className="border-t border-surface-muted/70" />}
+                <div className="flex items-center gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{merchantName(e.merchantId)}</p>
+                    <p className="truncate text-xs text-ink-muted">
+                      {budgetName(e.budgetId)} · {e.date.slice(8, 10)}/{e.date.slice(5, 7)}
+                      {e.planned ? " · à venir" : ""}
+                    </p>
+                  </div>
+                  <p className="shrink-0 font-semibold">{formatCents(e.amountCents)}</p>
+                  <button
+                    type="button"
+                    onClick={() => setOpenExpenseId(e.id)}
+                    className="shrink-0 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-600"
+                  >
+                    {e.planned ? "Confirmer" : "Catégoriser"}
+                  </button>
+                </div>
               </div>
-              <p
-                className="mt-0.5 text-2xl font-bold tracking-tight"
-                style={{ color: summary.commonBalanceCents < 0 ? "#ff3b30" : "rgb(var(--ink))" }}
-              >
-                <Amount cents={summary.commonBalanceCents} />
-                <span className="text-sm font-normal text-ink-muted">
-                  {" "}/ {formatCents(summary.commonAccountTotalCents)}
-                </span>
-              </p>
-            </div>
+            ))}
+          </Card>
+        </>
+      )}
+
+      <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Compte commun */}
+        <Card>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[13px] text-ink-muted">Compte commun</p>
+            <span
+              className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              style={
+                summary.commonBalanceStatus === "synced"
+                  ? { background: "rgba(50,215,75,0.16)", color: "#32D74B" }
+                  : { background: "rgba(255,255,255,0.10)", color: "rgb(var(--ink-muted))" }
+              }
+            >
+              {summary.commonBalanceStatus === "synced" ? "Synchronisé" : "Estimé"}
+            </span>
+          </div>
+          <p
+            className="mt-1 text-2xl font-bold tracking-tight"
+            style={{ color: summary.commonBalanceCents < 0 ? "#ff3b30" : "rgb(var(--ink))" }}
+          >
+            <Amount cents={summary.commonBalanceCents} />
+          </p>
+          <p className="text-xs text-ink-muted">sur {formatCents(summary.commonAccountTotalCents)}</p>
+          <div className="mt-2">
+            <ProgressBar progress={commonAccountRatio} status="normal" color={commonAccountColor} />
           </div>
         </Card>
-      </div>
 
-      {/* Solde total tickets restaurant + détail par utilisateur */}
-      {summary.mealVoucherBalances.length > 0 && (
-        <div className="mt-2">
+        {/* Tickets restaurant */}
+        {summary.mealVoucherBalances.length > 0 && (
           <Card>
-            <div className="flex items-center gap-4">
-              <RingProgress progress={mealVouchersRatio} size={56} stroke={6} color={mealVouchersColor}>
-                <span className="text-[10px] font-bold" style={{ color: mealVouchersColor }}>
-                  {Math.round(mealVouchersRatio * 100)}%
-                </span>
-              </RingProgress>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] text-ink-muted">Tickets restaurant</p>
-                <p className="mt-0.5 text-2xl font-bold tracking-tight" style={{ color: mealVouchersColor }}>
-                  <Amount cents={mealVouchersTotalRemaining} />
-                  <span className="text-sm font-normal text-ink-muted">
-                    {" "}/ {formatCents(mealVouchersTotalGranted)}
-                  </span>
-                </p>
-              </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[13px] text-ink-muted">Tickets restaurant</p>
               <button
                 type="button"
                 onClick={() => setShowMealDetails((v) => !v)}
-                className="text-sm font-medium text-brand-600"
+                className="shrink-0 text-xs font-medium text-brand-600"
               >
                 {showMealDetails ? "Masquer" : "Détails"}
               </button>
             </div>
-
+            <p className="mt-1 text-2xl font-bold tracking-tight" style={{ color: mealVouchersColor }}>
+              <Amount cents={mealVouchersTotalRemaining} />
+            </p>
+            <p className="text-xs text-ink-muted">sur {formatCents(mealVouchersTotalGranted)}</p>
+            <div className="mt-2">
+              <ProgressBar progress={mealVouchersRatio} status="normal" color={mealVouchersColor} />
+            </div>
             {showMealDetails && (
               <div className="mt-3 space-y-2 border-t border-surface-muted pt-3">
                 {summary.mealVoucherBalances.map((b) => (
@@ -191,8 +255,8 @@ export default function DashboardPage() {
               </div>
             )}
           </Card>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Par utilisateur */}
       <SectionTitle>Par personne</SectionTitle>
@@ -243,47 +307,23 @@ export default function DashboardPage() {
       </Card>
 
       {/* Budgets du mois */}
-      <SectionTitle>
-        Budgets du mois
+      <SectionTitle action={<button type="button" onClick={() => router.push("/budgets")}>Tout voir</button>}>
+        Budgets à surveiller
       </SectionTitle>
-      <Card>
-        {budgets.length === 0 ? (
-          <EmptyState icon="📊" title="Aucun budget actif" hint="Créez un budget avec le bouton +." />
+      <Card className="py-1">
+        {watchedBudgets.length === 0 ? (
+          <EmptyState icon="✅" title="Aucun budget à surveiller" hint="Tout est dans le rythme." />
         ) : (
-          budgets.map((budget, i) => {
-            const progress = summary.budgetProgress.find((p) => p.budgetId === budget.id);
-            if (!progress) return null;
-            const color = tileColorFor(budget.id);
-            const status =
-              progress.progress > 1 ? "over" : progress.progress >= 0.75 ? "warning" : "normal";
-            const ringC =
-              status === "over" ? "#ff3b30" : status === "warning" ? "#ff9500" : color.bar;
-
-            return (
-              <div key={budget.id}>
-                {i > 0 && <div className="my-3 border-t border-surface-muted" />}
-                <button
-                  type="button"
-                  onClick={() => router.push(`/budgets/${budget.id}`)}
-                  className="flex w-full items-center gap-3 text-left"
-                >
-                  <BudgetTile icon={budget.icon} bg={color.bg} color={color.bar} size={40} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{budget.name}</p>
-                    <p className="text-xs text-ink-muted">
-                      {formatCents(progress.spentCents)} / {formatCents(progress.plannedMonthlyCents)}
-                    </p>
-                  </div>
-                  <RingProgress progress={progress.progress} size={38} stroke={3.5} color={ringC}>
-                    <span className="text-[9px] font-bold" style={{ color: ringC }}>
-                      {Math.round(progress.progress * 100)}%
-                    </span>
-                  </RingProgress>
-                  <Chevron />
-                </button>
-              </div>
-            );
-          })
+          watchedBudgets.map((budget, i) => (
+            <div key={budget.id}>
+              {i > 0 && <div className="border-t border-surface-muted/70" />}
+              <BudgetRow
+                budget={budget}
+                progress={summary.budgetProgress.find((p) => p.budgetId === budget.id)}
+                onClick={() => router.push(`/budgets/${budget.id}`)}
+              />
+            </div>
+          ))
         )}
       </Card>
 
@@ -307,6 +347,8 @@ export default function DashboardPage() {
           <IncomeForm onDone={() => setIncomeUserId(null)} defaultUserId={incomeUserId} month={currentMonth} />
         )}
       </Sheet>
+
+      <ExpenseSheet expenseId={openExpenseId} onClose={() => setOpenExpenseId(null)} />
 
       {activeUsers.length === 0 && null}
     </div>

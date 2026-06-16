@@ -9,7 +9,7 @@ import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
 import { contributionSummaries } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
 import { formatCents } from "@/lib/money";
-import { formatDateLabel } from "@/lib/date";
+import { formatDateLabel, todayIso } from "@/lib/date";
 
 type Filter = "all" | "expense" | "income" | "contribution" | "provision" | "meal_voucher";
 
@@ -44,19 +44,32 @@ const BADGE: Record<Exclude<Filter, "all">, { label: string; color: string; bg: 
   meal_voucher: { label: "Tickets resto", color: "#32ade6", bg: "#e4f5fb" },
 };
 
-const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: "all", label: "Toutes" },
+type Tab = "all" | "unclassified" | "expense" | "income" | "contribution";
+
+const FILTERS: Array<{ value: Tab; label: string }> = [
+  { value: "all", label: "Tous" },
+  { value: "unclassified", label: "À classer" },
   { value: "expense", label: "Dépenses" },
   { value: "income", label: "Revenus" },
   { value: "contribution", label: "Contributions" },
-  { value: "provision", label: "Provisions" },
-  { value: "meal_voucher", label: "Tickets resto" },
 ];
+
+function dateBucket(date: string, today: string): string {
+  if (date.slice(0, 10) === today) return "Aujourd'hui";
+  const d = new Date(`${date.slice(0, 10)}T00:00:00`).getTime();
+  const t = new Date(`${today}T00:00:00`).getTime();
+  if (t - d === 86_400_000) return "Hier";
+  const [y, m, dd] = date.slice(0, 10).split("-").map(Number);
+  if (!y || !m || !dd) return date.slice(0, 10);
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(
+    new Date(y, m - 1, dd),
+  );
+}
 
 export default function ActivityPage() {
   const app = useAppState();
   const { state, currentMonth, activeUsers } = app;
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Tab>("all");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filterUser, setFilterUser] = useState("");
@@ -155,14 +168,31 @@ export default function ActivityPage() {
   }, [state, currentMonth, activeUsers]);
 
   const q = search.trim().toLowerCase();
+  const isExpenseKind = (k: ActivityItem["kind"]) => k === "expense" || k === "meal_voucher";
+  const matchesTab = (it: ActivityItem) => {
+    if (filter === "all") return true;
+    if (filter === "unclassified") return isExpenseKind(it.kind) && !it.budgetId;
+    if (filter === "expense") return isExpenseKind(it.kind);
+    return it.kind === filter;
+  };
   const filtered = items.filter(
     (it) =>
-      (filter === "all" || it.kind === filter) &&
+      matchesTab(it) &&
       (!filterUser || it.userId === filterUser) &&
       (!filterMerchant || it.merchantId === filterMerchant) &&
       (!filterBudget || it.budgetId === filterBudget) &&
       (!q || it.search.includes(q)),
   );
+
+  // Regroupement par date (déjà trié décroissant).
+  const today = todayIso();
+  const groups: Array<{ label: string; items: ActivityItem[] }> = [];
+  for (const it of filtered) {
+    const label = dateBucket(it.date, today);
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.items.push(it);
+    else groups.push({ label, items: [it] });
+  }
 
   const activeFilterCount = (filterUser ? 1 : 0) + (filterMerchant ? 1 : 0) + (filterBudget ? 1 : 0);
 
@@ -204,7 +234,7 @@ export default function ActivityPage() {
         <TextInput
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher (enseigne, budget, étiquette…)"
+          placeholder="Rechercher un mouvement"
         />
       </div>
 
@@ -276,52 +306,57 @@ export default function ActivityPage() {
         </Card>
       )}
 
-      <div className="mt-2">
-        {filtered.length === 0 ? (
-          <EmptyState icon="📋" title="Aucune activité" hint={q || activeFilterCount > 0 ? "Aucun résultat pour ces critères." : undefined} />
-        ) : (
-          <Card>
-            {filtered.map((item, i) => {
-              const visual = KIND_VISUAL[item.kind];
-              const editable = item.kind === "expense" || item.kind === "meal_voucher";
-              return (
-                <div key={item.id}>
-                  {i > 0 && <div className="my-3 border-t border-surface-muted" />}
-                  <button
-                    type="button"
-                    disabled={!editable}
-                    onClick={editable ? () => setOpenExpenseId(item.id) : undefined}
-                    className="flex w-full items-center gap-3 text-left disabled:cursor-default"
-                  >
-                    {item.logoUrl ? (
-                      <Avatar name={item.title} src={item.logoUrl} size={40} />
-                    ) : (
-                      <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{item.title}</p>
-                      <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>
-                      <span
-                        className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                        style={{ background: item.badge.bg, color: item.badge.color }}
-                      >
-                        {item.badge.label}
-                      </span>
-                    </div>
-                    <p
-                      className="shrink-0 font-semibold"
-                      style={{ color: item.amountCents >= 0 ? "#34c759" : "rgb(var(--ink))" }}
+      {filtered.length === 0 ? (
+        <div className="mt-2">
+          <EmptyState icon="📋" title="Aucun mouvement" hint={q || activeFilterCount > 0 ? "Aucun résultat pour ces critères." : undefined} />
+        </div>
+      ) : (
+        groups.map((group) => (
+          <div key={group.label}>
+            <SectionTitle>{group.label}</SectionTitle>
+            <Card className="py-1">
+              {group.items.map((item, i) => {
+                const visual = KIND_VISUAL[item.kind];
+                const editable = item.kind === "expense" || item.kind === "meal_voucher";
+                const unclassified = editable && !item.budgetId;
+                return (
+                  <div key={item.id}>
+                    {i > 0 && <div className="border-t border-surface-muted/70" />}
+                    <button
+                      type="button"
+                      disabled={!editable}
+                      onClick={editable ? () => setOpenExpenseId(item.id) : undefined}
+                      className="flex w-full items-center gap-3 py-3 text-left disabled:cursor-default"
                     >
-                      <Amount cents={item.amountCents} sign />
-                    </p>
-                    {editable && <Chevron />}
-                  </button>
-                </div>
-              );
-            })}
-          </Card>
-        )}
-      </div>
+                      {item.logoUrl ? (
+                        <Avatar name={item.title} src={item.logoUrl} size={40} />
+                      ) : (
+                        <BudgetTile icon={visual.icon} bg={visual.bg} color={visual.color} size={40} />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{item.title}</p>
+                        <p className="truncate text-xs text-ink-muted">{item.subtitle}</p>
+                        {unclassified && (
+                          <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-warn">
+                            À classer
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className="shrink-0 font-semibold"
+                        style={{ color: item.amountCents >= 0 ? "#32D74B" : "rgb(var(--ink))" }}
+                      >
+                        <Amount cents={item.amountCents} sign />
+                      </p>
+                      {editable && <Chevron />}
+                    </button>
+                  </div>
+                );
+              })}
+            </Card>
+          </div>
+        ))
+      )}
 
       <ExpenseSheet expenseId={openExpenseId} onClose={() => setOpenExpenseId(null)} />
     </div>

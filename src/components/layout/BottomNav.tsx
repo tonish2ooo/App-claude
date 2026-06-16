@@ -78,12 +78,12 @@ function AdminIcon({ filled }: { filled: boolean }) {
 }
 
 const LEFT = [
-  { href: "/",        label: "Accueil",  Icon: HomeIcon    },
+  { href: "/",        label: "Aperçu",   Icon: HomeIcon    },
   { href: "/budgets", label: "Budgets",  Icon: BudgetsIcon },
 ];
 const RIGHT = [
-  { href: "/activity", label: "Activité", Icon: ActivityIcon },
-  { href: "/admin",    label: "Profil",   Icon: AdminIcon    },
+  { href: "/activity", label: "Mouvements", Icon: ActivityIcon },
+  { href: "/admin",    label: "Réglages",   Icon: AdminIcon    },
 ];
 
 export function BottomNav() {
