@@ -29,8 +29,11 @@ import { buildDemoState, buildEmptyState } from "@/lib/seed/demo";
 import { buildPresetBudgets } from "@/lib/seed/budgets";
 import { generateMonthlyAnnualBudgetProvisions } from "@/lib/calc/provisions";
 import { materializeRecurringForMonth } from "@/lib/calc/recurring";
+import { budgetProgressForMonth, budgetTotalForMonth } from "@/lib/calc/dashboard";
+import { spentTotalForMonth } from "@/lib/calc/expenses";
+import { computeSettlement } from "@/lib/calc/settlement";
 import { makeId } from "@/lib/id";
-import { todayIso } from "@/lib/date";
+import { nextMonth, todayIso } from "@/lib/date";
 
 interface AppStateApi {
   state: LocalAppState;
@@ -43,6 +46,8 @@ interface AppStateApi {
   resetEmpty: () => void;
   /** Remplace l'état courant par des données importées (JSON). Renvoie false si invalide. */
   importState: (raw: unknown) => boolean;
+  /** Clôture le mois courant (fige le bilan) et passe au mois suivant. */
+  closeMonth: () => void;
 
   updateHousehold: (patch: Partial<Household>) => void;
   setCurrentMonth: (month: Month) => void;
@@ -158,6 +163,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setState(withRegeneratedProvisions(migrated));
         return true;
       },
+      closeMonth: () =>
+        update((prev) => {
+          const month = prev.household.currentMonth;
+          if (prev.monthClosures.some((c) => c.month === month)) return prev;
+          const active = prev.users.filter((u) => u.active);
+          const progress = budgetProgressForMonth(prev.budgets, prev.expenses, month);
+          const settlement = computeSettlement({
+            expenses: prev.expenses,
+            activeUsers: active,
+            incomes: prev.incomes,
+            month,
+          });
+          const closure = {
+            id: makeId("close"),
+            householdId: prev.household.id,
+            month,
+            closedAt: now(),
+            budgetTotalCents: budgetTotalForMonth(prev.budgets, month),
+            spentTotalCents: spentTotalForMonth(prev.expenses, month),
+            byBudget: progress.map((p) => ({
+              budgetId: p.budgetId,
+              plannedCents: p.plannedMonthlyCents,
+              spentCents: p.spentCents,
+            })),
+            settlementTransfers: settlement.transfers,
+          };
+          return {
+            ...prev,
+            monthClosures: [...prev.monthClosures, closure],
+            household: { ...prev.household, currentMonth: nextMonth(month), updatedAt: now() },
+          };
+        }),
 
       updateHousehold: (patch) =>
         update((prev) => ({

@@ -53,6 +53,7 @@ describe("migrateState", () => {
     expect(migrated?.recurringExpenses).toEqual([]);
     expect(migrated?.materializedRecurring).toEqual([]);
     expect(migrated?.savingsGoals).toEqual([]);
+    expect(migrated?.monthClosures).toEqual([]);
   });
 });
 

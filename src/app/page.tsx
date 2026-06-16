@@ -287,12 +287,17 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      <div className="mt-3">
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <Card onClick={() => router.push("/stats")}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="text-xl">📈</span>
-            <p className="flex-1 font-medium">Statistiques du foyer</p>
-            <Chevron />
+            <p className="text-sm font-medium">Statistiques</p>
+          </div>
+        </Card>
+        <Card onClick={() => router.push("/bilan")}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🧾</span>
+            <p className="text-sm font-medium">Bilan du mois</p>
           </div>
         </Card>
       </div>

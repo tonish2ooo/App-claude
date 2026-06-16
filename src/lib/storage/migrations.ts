@@ -37,6 +37,14 @@ export function migrateState(raw: unknown): LocalAppState | null {
     };
   }
 
+  // v4 -> v5 : clôtures mensuelles.
+  if ((state.version ?? 1) < 5) {
+    migrated = {
+      ...migrated,
+      monthClosures: migrated.monthClosures ?? [],
+    };
+  }
+
   if (!migrated.household) return null;
 
   const result: LocalAppState = {
@@ -51,6 +59,7 @@ export function migrateState(raw: unknown): LocalAppState | null {
     recurringExpenses: migrated.recurringExpenses ?? [],
     materializedRecurring: migrated.materializedRecurring ?? [],
     savingsGoals: migrated.savingsGoals ?? [],
+    monthClosures: migrated.monthClosures ?? [],
     passkeys: migrated.passkeys ?? [],
     onboardingComplete: migrated.onboardingComplete ?? false,
     currentUserId: migrated.currentUserId ?? null,

@@ -11,6 +11,8 @@ const ENTRIES = [
   { href: "/admin/recurring", icon: "🔁", label: "Abonnements", desc: "Dépenses récurrentes automatiques" },
   { href: "/admin/merchants", icon: "🏬", label: "Enseignes", desc: "Commerçants et fournisseurs" },
   { href: "/stats", icon: "📈", label: "Statistiques", desc: "Répartition, évolution, top enseignes" },
+  { href: "/bilan", icon: "🧾", label: "Bilan & clôture du mois", desc: "Budgété vs réel, reste à régler" },
+  { href: "/year", icon: "📅", label: "Vue annuelle", desc: "Échéances annuelles, provisionné vs réel" },
   { href: "/admin/settings", icon: "🏠", label: "Paramètres du foyer", desc: "Mois, devise, mode, solde" },
   { href: "/admin/security", icon: "🔐", label: "Sécurité / connexion", desc: "Connexion rapide, déconnexion" },
 ];

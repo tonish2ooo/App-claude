@@ -366,10 +366,26 @@ export interface PasskeyCredential {
 export type BankConnectionMode = "manual" | "connected" | "demo";
 
 // ---------------------------------------------------------------------------
+// Clôture mensuelle (bilan figé)
+// ---------------------------------------------------------------------------
+
+export interface MonthClosure {
+  id: string;
+  householdId: string;
+  month: Month;
+  closedAt: string;
+  budgetTotalCents: Cents;
+  spentTotalCents: Cents;
+  byBudget: Array<{ budgetId: string; plannedCents: Cents; spentCents: Cents }>;
+  /** Virements de rééquilibrage figés à la clôture. */
+  settlementTransfers: Array<{ fromUserId: string; toUserId: string; amountCents: Cents }>;
+}
+
+// ---------------------------------------------------------------------------
 // État applicatif persistant (localStorage)
 // ---------------------------------------------------------------------------
 
-export const APP_STATE_VERSION = 4;
+export const APP_STATE_VERSION = 5;
 
 export interface LocalAppState {
   version: number;
@@ -384,6 +400,7 @@ export interface LocalAppState {
   /** Clés "recurringId:YYYY-MM" déjà matérialisées (anti-doublon, append-only). */
   materializedRecurring: string[];
   savingsGoals: SavingsGoal[];
+  monthClosures: MonthClosure[];
   passkeys: PasskeyCredential[];
   /** Onboarding terminé. */
   onboardingComplete: boolean;
