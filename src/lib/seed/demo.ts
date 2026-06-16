@@ -1,5 +1,8 @@
-import { currentMonth, previousMonth, todayIso } from "../date";
+import { currentMonth, lastNMonths, previousMonth, todayIso } from "../date";
 import { generateMonthlyAnnualBudgetProvisions } from "../calc/provisions";
+import { budgetProgressForMonth, budgetTotalForMonth } from "../calc/dashboard";
+import { spentTotalForMonth } from "../calc/expenses";
+import { computeSettlement } from "../calc/settlement";
 import { makeId } from "../id";
 import { APP_STATE_VERSION, type LocalAppState } from "../types";
 import { buildPresetBudgets } from "./budgets";
@@ -42,44 +45,37 @@ export function buildDemoState(): LocalAppState {
     },
   ];
 
-  const incomes: LocalAppState["incomes"] = [
-    {
+  // Revenus sur 6 mois (mois courant exact, petites variations de TR avant)
+  // pour alimenter les courbes d'évolution et les moyennes.
+  const incomeMonths = lastNMonths(month, 6);
+  const incomes: LocalAppState["incomes"] = [];
+  incomeMonths.forEach((m, idx) => {
+    const isCurrent = m === month;
+    incomes.push({
       id: makeId("inc"),
       householdId,
       userId: u1,
-      month,
+      month: m,
       salaryCents: 397399,
-      mealVouchersCents: 25200,
-      declaredAt: todayIso(),
+      mealVouchersCents: isCurrent ? 25200 : 23400 + (idx % 3) * 600,
+      declaredAt: isCurrent ? todayIso() : `${m}-05`,
       lastEditedByUserId: u1,
       createdAt: now,
       updatedAt: now,
-    },
-    {
+    });
+    incomes.push({
       id: makeId("inc"),
       householdId,
       userId: u2,
-      month,
+      month: m,
       salaryCents: 324804,
-      mealVouchersCents: 17000,
-      declaredAt: todayIso(),
+      mealVouchersCents: isCurrent ? 17000 : 15800 + (idx % 2) * 800,
+      declaredAt: isCurrent ? todayIso() : `${m}-05`,
       lastEditedByUserId: u2,
       createdAt: now,
       updatedAt: now,
-    },
-    // Mois précédent (pour la duplication).
-    {
-      id: makeId("inc"),
-      householdId,
-      userId: u1,
-      month: prev,
-      salaryCents: 397399,
-      mealVouchersCents: 25200,
-      declaredAt: `${prev}-05`,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
+    });
+  });
 
   const budgets: LocalAppState["budgets"] = buildPresetBudgets(householdId, now);
 
@@ -132,6 +128,20 @@ export function buildDemoState(): LocalAppState {
     { budgetId: "budget_autre", amountCents: 13219 },
   ];
 
+  // Justificatif fictif (image SVG en data URL) pour illustrer la photo de reçu.
+  const receiptSvg =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='320'>" +
+    "<rect width='240' height='320' fill='#ffffff'/>" +
+    "<text x='20' y='44' font-family='monospace' font-size='18' fill='#111'>CARREFOUR</text>" +
+    "<text x='20' y='84' font-family='monospace' font-size='13' fill='#444'>Courses</text>" +
+    "<line x1='20' y1='100' x2='220' y2='100' stroke='#ccc'/>" +
+    "<text x='20' y='140' font-family='monospace' font-size='13' fill='#444'>Articles ......... 55,30</text>" +
+    "<text x='20' y='168' font-family='monospace' font-size='13' fill='#444'>TVA ..............  5,52</text>" +
+    "<line x1='20' y1='190' x2='220' y2='190' stroke='#ccc'/>" +
+    "<text x='20' y='226' font-family='monospace' font-size='17' fill='#111'>TOTAL  60,82 EUR</text>" +
+    "</svg>";
+  const receiptDataUrl = `data:image/svg+xml,${encodeURIComponent(receiptSvg)}`;
+
   const currentExpenses: LocalAppState["expenses"] = realExpenses.map((e, i) => ({
     id: makeId("exp"),
     householdId,
@@ -145,9 +155,46 @@ export function buildDemoState(): LocalAppState {
     budgetId: e.budgetId,
     source: "manual",
     tags: e.tags,
+    receiptUrl: e.budgetId === "budget_courses" ? receiptDataUrl : undefined,
     createdAt: now,
     updatedAt: now,
   }));
+
+  // Tickets restaurant utilisés ce mois-ci (pour montrer le solde TR par personne).
+  const mealCurrent: LocalAppState["expenses"] = [
+    {
+      id: makeId("exp"),
+      householdId,
+      merchantId: "merchant_resto",
+      userId: u1,
+      amountCents: 1800,
+      currency: "EUR",
+      paymentSource: "meal_voucher",
+      mealVoucherUserId: u1,
+      splitRule: { mode: "prorata" },
+      date: `${month}-08`,
+      budgetId: "budget_restaurant",
+      source: "manual",
+      tags: ["midi"],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("exp"),
+      householdId,
+      userId: u2,
+      amountCents: 1240,
+      currency: "EUR",
+      paymentSource: "meal_voucher",
+      mealVoucherUserId: u2,
+      splitRule: { mode: "prorata" },
+      date: `${month}-12`,
+      budgetId: "budget_courses",
+      source: "manual",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
 
   // Dépense planifiée (à venir) — exclue des dépenses réalisées.
   const plannedExpense: LocalAppState["expenses"][number] = {
@@ -237,9 +284,65 @@ export function buildDemoState(): LocalAppState {
     { monthsAgo: 5, day: 12, cents: 8300 },
   ];
 
+  // Mois précédent : mêmes budgets avec de légères variations (sauf courses /
+  // restaurant déjà couverts par l'historique enseignes) → comparaison N vs N-1.
+  const prevMirror: LocalAppState["expenses"] = realExpenses
+    .filter((e) => e.budgetId !== "budget_courses" && e.budgetId !== "budget_restaurant")
+    .map((e, i) => ({
+      id: makeId("exp"),
+      householdId,
+      userId: i % 2 === 0 ? u1 : u2,
+      amountCents: Math.round(e.amountCents * (0.85 + (i % 5) * 0.07)),
+      currency: "EUR",
+      paymentSource: "common_account",
+      splitRule: { mode: "prorata" },
+      date: `${prev}-${String((i % 26) + 2).padStart(2, "0")}`,
+      budgetId: e.budgetId,
+      source: "manual",
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+  // Dépenses réelles sur des budgets annuels (pour la vue annuelle).
+  const annualReals: LocalAppState["expenses"] = [
+    {
+      id: makeId("exp"),
+      householdId,
+      userId: u1,
+      amountCents: 150000,
+      currency: "EUR",
+      paymentSource: "common_account",
+      splitRule: { mode: "prorata" },
+      date: `${monthMinus(month, 2)}-14`,
+      budgetId: "budget_vacances",
+      note: "Acompte location",
+      source: "manual",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: makeId("exp"),
+      householdId,
+      userId: u2,
+      amountCents: 80800,
+      currency: "EUR",
+      paymentSource: "common_account",
+      splitRule: { mode: "prorata" },
+      date: `${monthMinus(month, 3)}-18`,
+      budgetId: "budget_cadastre",
+      note: "Taxe foncière",
+      source: "manual",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
   const expenses: LocalAppState["expenses"] = [
     ...currentExpenses,
+    ...mealCurrent,
     plannedExpense,
+    ...prevMirror,
+    ...annualReals,
     ...buildHistory(carrefourHistory, "merchant_carrefour", "budget_courses"),
     ...buildHistory(bistrotHistory, "merchant_resto", "budget_restaurant"),
   ];
@@ -283,6 +386,26 @@ export function buildDemoState(): LocalAppState {
       active: true,
       createdAt: now,
       updatedAt: now,
+    },
+  ];
+
+  // Mois précédent déjà clôturé (pour illustrer l'archive du bilan).
+  const prevProgress = budgetProgressForMonth(budgets, expenses, prev);
+  const prevSettlement = computeSettlement({ expenses, activeUsers: users, incomes, month: prev });
+  const monthClosures: LocalAppState["monthClosures"] = [
+    {
+      id: makeId("close"),
+      householdId,
+      month: prev,
+      closedAt: now,
+      budgetTotalCents: budgetTotalForMonth(budgets, prev),
+      spentTotalCents: spentTotalForMonth(expenses, prev),
+      byBudget: prevProgress.map((p) => ({
+        budgetId: p.budgetId,
+        plannedCents: p.plannedMonthlyCents,
+        spentCents: p.spentCents,
+      })),
+      settlementTransfers: prevSettlement.transfers,
     },
   ];
 
@@ -335,7 +458,7 @@ export function buildDemoState(): LocalAppState {
     recurringExpenses,
     materializedRecurring: [],
     savingsGoals,
-    monthClosures: [],
+    monthClosures,
     passkeys: [],
     onboardingComplete: true,
     currentUserId: u1,
