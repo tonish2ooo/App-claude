@@ -76,8 +76,11 @@ export function CloudSync() {
       {auth ? (
         <>
           <p className="text-xs text-ink-muted">Connecté : {auth.email ?? auth.userId}</p>
+          <p className="text-xs text-ok">
+            Synchronisation automatique activée — tes modifications sont enregistrées dans le cloud.
+          </p>
           <button type="button" className="btn-ghost w-full" disabled={busy} onClick={save}>
-            Sauvegarder dans le cloud
+            Forcer la sauvegarde
           </button>
           <button type="button" className="btn-ghost w-full" disabled={busy} onClick={restore}>
             Restaurer depuis le cloud

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { ReactNode } from "react";
@@ -32,6 +33,9 @@ import { materializeRecurringForMonth } from "@/lib/calc/recurring";
 import { budgetProgressForMonth, budgetTotalForMonth } from "@/lib/calc/dashboard";
 import { spentTotalForMonth } from "@/lib/calc/expenses";
 import { computeSettlement } from "@/lib/calc/settlement";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { getAuthInfo, onAuthChange } from "@/lib/supabase/auth";
+import { loadRemoteState, saveRemoteState } from "@/lib/supabase/sync";
 import { makeId } from "@/lib/id";
 import { nextMonth, todayIso } from "@/lib/date";
 
@@ -137,6 +141,60 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready) saveState(state);
   }, [state, ready]);
+
+  // --- Synchronisation cloud (optionnelle, sans effet si Supabase non configuré) ---
+  const [cloudUserId, setCloudUserId] = useState<string | null>(null);
+  const stateRef = useRef(state);
+  const suppressCloudSave = useRef(false);
+  const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // Détecte la session Supabase en cours et écoute les changements.
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    let active = true;
+    getAuthInfo().then((info) => {
+      if (active) setCloudUserId(info?.userId ?? null);
+    });
+    return onAuthChange((info) => setCloudUserId(info?.userId ?? null));
+  }, []);
+
+  // À la connexion : adopte l'état cloud s'il existe, sinon l'initialise.
+  useEffect(() => {
+    if (!cloudUserId || !ready) return;
+    let active = true;
+    void (async () => {
+      const { state: remote } = await loadRemoteState(cloudUserId);
+      if (!active) return;
+      if (remote) {
+        suppressCloudSave.current = true;
+        setState(withRegeneratedProvisions(remote));
+      } else {
+        await saveRemoteState(cloudUserId, stateRef.current);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [cloudUserId, ready]);
+
+  // Sauvegarde cloud (anti-rebond) à chaque changement quand connecté.
+  useEffect(() => {
+    if (!cloudUserId || !ready) return;
+    if (suppressCloudSave.current) {
+      suppressCloudSave.current = false;
+      return;
+    }
+    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    cloudSaveTimer.current = setTimeout(() => {
+      void saveRemoteState(cloudUserId, stateRef.current);
+    }, 1500);
+    return () => {
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    };
+  }, [state, cloudUserId, ready]);
 
   const now = () => new Date().toISOString();
 

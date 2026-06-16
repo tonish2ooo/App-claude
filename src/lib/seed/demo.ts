@@ -79,6 +79,11 @@ export function buildDemoState(): LocalAppState {
 
   const budgets: LocalAppState["budgets"] = buildPresetBudgets(householdId, now);
 
+  const logoData = (letter: string, bg: string) =>
+    `data:image/svg+xml,${encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='${bg}'/><text x='32' y='44' font-family='Arial' font-size='34' font-weight='bold' fill='#fff' text-anchor='middle'>${letter}</text></svg>`,
+    )}`;
+
   const merchants: LocalAppState["merchants"] = [
     {
       id: "merchant_carrefour",
@@ -86,6 +91,7 @@ export function buildDemoState(): LocalAppState {
       name: "Carrefour",
       category: "alimentation",
       defaultBudgetId: "budget_courses",
+      logoUrl: logoData("C", "#0050b3"),
       address: "2 Avenue de la République, 59650 Villeneuve-d'Ascq",
       latitude: 50.6311,
       longitude: 3.1469,
@@ -99,6 +105,7 @@ export function buildDemoState(): LocalAppState {
       name: "Le Bistrot",
       category: "restaurant",
       defaultBudgetId: "budget_restaurant",
+      logoUrl: logoData("B", "#d2691e"),
       address: "12 Place du Général de Gaulle, 59000 Lille",
       latitude: 50.6366,
       longitude: 3.0635,
