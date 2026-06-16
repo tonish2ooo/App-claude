@@ -16,13 +16,14 @@
 
 .dark {
   color-scheme: dark;
-  --surface: 28 28 30;
-  --surface-subtle: 0 0 0;
-  --surface-muted: 44 44 46;
-  --ink: 255 255 255;
-  --ink-soft: 209 209 214;
-  --ink-muted: 152 152 159;
-  --ink-faint: 72 72 74;
+  /* Charte premium : noir profond légèrement bleuté, cartes anthracite. */
+  --surface: 24 27 33;
+  --surface-subtle: 11 14 18;
+  --surface-muted: 38 42 51;
+  --ink: 245 247 250;
+  --ink-soft: 198 203 212;
+  --ink-muted: 142 148 160;
+  --ink-faint: 80 86 98;
 }
 
 html,

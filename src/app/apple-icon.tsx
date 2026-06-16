@@ -17,7 +17,7 @@ export default function AppleIcon() {
           justifyContent: "center",
           gap: s * 0.08,
           padding: s * 0.21,
-          background: "linear-gradient(135deg, #007aff 0%, #0060d0 100%)",
+          background: "linear-gradient(135deg, #13C8A0 0%, #0FA98A 100%)",
         }}
       >
         <div style={{ width: s * 0.137, height: s * 0.29, background: "#fff", borderRadius: s * 0.05 }} />

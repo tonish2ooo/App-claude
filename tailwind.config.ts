@@ -23,12 +23,12 @@ const config: Config = {
           faint: "rgb(var(--ink-faint) / <alpha-value>)",
         },
         brand: {
-          50: "#e5f2ff",
-          100: "#cce4ff",
-          200: "#99caff",
-          500: "#0a84ff",
-          600: "#007aff",
-          700: "#0060d0",
+          50: "#e6f9f3",
+          100: "#c6f1e3",
+          200: "#8fe6cd",
+          500: "#2ad7ad",
+          600: "#13C8A0",
+          700: "#0fa98a",
         },
         accent: {
           DEFAULT: "#ff2d55",
@@ -51,11 +51,11 @@ const config: Config = {
       },
       boxShadow: {
         card: "0 1px 0 rgba(0,0,0,0.06)",
-        fab: "0 4px 16px rgba(0,122,255,0.35)",
+        fab: "0 6px 18px rgba(19,200,160,0.45)",
         hero: "0 2px 8px rgba(0,0,0,0.08)",
       },
       backgroundImage: {
-        hero: "linear-gradient(135deg, #007aff 0%, #0060d0 100%)",
+        hero: "linear-gradient(135deg, #2ad7ad 0%, #13C8A0 55%, #0fa98a 100%)",
       },
       maxWidth: {
         app: "30rem",

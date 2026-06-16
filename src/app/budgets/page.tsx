@@ -51,7 +51,7 @@ export default function BudgetsPage() {
 
   const totalSpent = progress.reduce((s, p) => s + p.spentCents, 0);
   const globalPct = total > 0 ? totalSpent / total : 0;
-  const globalColor = globalPct > 1 ? "#ff3b30" : globalPct >= 0.75 ? "#ff9500" : "#007aff";
+  const globalColor = globalPct > 1 ? "#ff3b30" : globalPct >= 0.75 ? "#ff9500" : "#13C8A0";
 
   return (
     <div className="space-y-1">
@@ -190,7 +190,7 @@ export default function BudgetsPage() {
         ) : (
           state.savingsGoals.map((g) => {
             const p = goalProgress(g, today);
-            const color = p.reached ? "#34c759" : "#007aff";
+            const color = p.reached ? "#34c759" : "#13C8A0";
             return (
               <Card key={g.id} onClick={() => setEditingGoal(g)}>
                 <div className="flex items-center gap-3">

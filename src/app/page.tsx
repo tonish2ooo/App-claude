@@ -52,14 +52,14 @@ export default function DashboardPage() {
       ? summary.commonBalanceCents / summary.commonAccountTotalCents
       : 0;
   const commonAccountColor =
-    summary.commonBalanceCents < 0 ? "#ff3b30" : commonAccountRatio < 0.15 ? "#ff9500" : "#007aff";
+    summary.commonBalanceCents < 0 ? "#ff3b30" : commonAccountRatio < 0.15 ? "#ff9500" : "#13C8A0";
 
   const globalProgress =
     summary.budgetTotalCents > 0 ? summary.spentTotalCents / summary.budgetTotalCents : 0;
   const globalStatus =
     globalProgress > 1 ? "over" : globalProgress >= 0.75 ? "warning" : "normal";
   const ringColor =
-    globalStatus === "over" ? "#ff3b30" : globalStatus === "warning" ? "#ff9500" : "#007aff";
+    globalStatus === "over" ? "#ff3b30" : globalStatus === "warning" ? "#ff9500" : "#13C8A0";
 
   return (
     <div className="space-y-1">
@@ -100,7 +100,7 @@ export default function DashboardPage() {
               <p className="text-[13px] text-ink-muted">Restant ce mois</p>
               <p
                 className="mt-0.5 text-[32px] font-bold leading-none tracking-tight"
-                style={{ color: summary.remainingBudgetCents >= 0 ? "rgb(var(--ink))" : "#ff3b30" }}
+                style={{ color: summary.remainingBudgetCents >= 0 ? "#13C8A0" : "#ff3b30" }}
               >
                 <Amount cents={summary.remainingBudgetCents} />
               </p>

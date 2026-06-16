@@ -76,7 +76,7 @@ export function BudgetForm({ onDone, budget }: { onDone: () => void; budget?: Bu
               <BudgetIcon
                 name={name}
                 size={20}
-                color={icon === name ? "#007aff" : "#8e8e93"}
+                color={icon === name ? "#13C8A0" : "#8e8e93"}
               />
             </button>
           ))}

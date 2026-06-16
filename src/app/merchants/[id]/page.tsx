@@ -265,11 +265,11 @@ export default function MerchantDetailPage() {
           <Card>
             <p className="text-[13px] text-ink-muted">Répartition du paiement</p>
             <div className="mt-2 flex h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-              <div style={{ width: `${commonPct * 100}%`, background: "#007aff" }} />
+              <div style={{ width: `${commonPct * 100}%`, background: "#13C8A0" }} />
               <div style={{ width: `${(1 - commonPct) * 100}%`, background: "#32ade6" }} />
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs">
-              <span style={{ color: "#007aff" }}>Compte commun {formatCents(insights.commonAccountCents)}</span>
+              <span style={{ color: "#13C8A0" }}>Compte commun {formatCents(insights.commonAccountCents)}</span>
               <span style={{ color: "#32ade6" }}>Tickets resto {formatCents(insights.mealVoucherCents)}</span>
             </div>
           </Card>
