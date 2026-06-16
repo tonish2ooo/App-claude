@@ -36,6 +36,7 @@ import { computeSettlement } from "@/lib/calc/settlement";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getAuthInfo, onAuthChange } from "@/lib/supabase/auth";
 import { loadRemoteState, saveRemoteState } from "@/lib/supabase/sync";
+import { loadSharedState, myHousehold, saveSharedState } from "@/lib/supabase/household";
 import { makeId } from "@/lib/id";
 import { nextMonth, todayIso } from "@/lib/date";
 
@@ -147,6 +148,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state);
   const suppressCloudSave = useRef(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cible de synchro : foyer partagé si l'utilisateur en a un, sinon son propre blob.
+  const syncTarget = useRef<{ kind: "household" | "user"; id: string } | null>(null);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -161,18 +164,31 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return onAuthChange((info) => setCloudUserId(info?.userId ?? null));
   }, []);
 
-  // À la connexion : adopte l'état cloud s'il existe, sinon l'initialise.
+  // À la connexion : détermine la cible (foyer partagé ou blob perso),
+  // adopte l'état cloud s'il existe, sinon l'initialise.
   useEffect(() => {
-    if (!cloudUserId || !ready) return;
+    if (!cloudUserId || !ready) {
+      syncTarget.current = null;
+      return;
+    }
     let active = true;
     void (async () => {
-      const { state: remote } = await loadRemoteState(cloudUserId);
+      const hid = await myHousehold();
+      if (!active) return;
+      const target: { kind: "household" | "user"; id: string } = hid
+        ? { kind: "household", id: hid }
+        : { kind: "user", id: cloudUserId };
+      syncTarget.current = target;
+      const { state: remote } =
+        target.kind === "household" ? await loadSharedState(target.id) : await loadRemoteState(target.id);
       if (!active) return;
       if (remote) {
         suppressCloudSave.current = true;
         setState(withRegeneratedProvisions(remote));
+      } else if (target.kind === "household") {
+        await saveSharedState(target.id, stateRef.current);
       } else {
-        await saveRemoteState(cloudUserId, stateRef.current);
+        await saveRemoteState(target.id, stateRef.current);
       }
     })();
     return () => {
@@ -182,14 +198,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Sauvegarde cloud (anti-rebond) à chaque changement quand connecté.
   useEffect(() => {
-    if (!cloudUserId || !ready) return;
+    if (!cloudUserId || !ready || !syncTarget.current) return;
     if (suppressCloudSave.current) {
       suppressCloudSave.current = false;
       return;
     }
+    const target = syncTarget.current;
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     cloudSaveTimer.current = setTimeout(() => {
-      void saveRemoteState(cloudUserId, stateRef.current);
+      if (target.kind === "household") void saveSharedState(target.id, stateRef.current);
+      else void saveRemoteState(target.id, stateRef.current);
     }, 1500);
     return () => {
       if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
