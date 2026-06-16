@@ -4,9 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/state/AppStateContext";
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
-import { Amount, BudgetTile, Card, Chevron, EmptyState, RingProgress, SectionTitle } from "@/components/ui/primitives";
-import { tileColorFor } from "@/components/ui/budgetColor";
-import type { BudgetType } from "@/lib/types";
+import { Amount, Card, Chevron, EmptyState, RingProgress, SectionTitle } from "@/components/ui/primitives";
+import { TextInput } from "@/components/ui/fields";
+import { BudgetRow } from "@/components/budgets/BudgetRow";
 import { Sheet } from "@/components/ui/Sheet";
 import { BudgetForm } from "@/components/forms/BudgetForm";
 import { GoalForm } from "@/components/forms/GoalForm";
@@ -17,18 +17,13 @@ import { formatCents } from "@/lib/money";
 import { todayIso } from "@/lib/date";
 import type { SavingsGoal } from "@/lib/types";
 
-const TYPE_LABEL: Record<string, string> = {
-  monthly: "Mensuel",
-  annual: "Annuel",
-  savings: "Épargne",
-};
-
 export default function BudgetsPage() {
   const app = useAppState();
   const { state, currentMonth } = app;
   const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [filter, setFilter] = useState<"all" | BudgetType>("all");
+  const [filter, setFilter] = useState<"all" | "risk" | "over" | "fixed">("all");
+  const [search, setSearch] = useState("");
   const [goalCreating, setGoalCreating] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   const today = todayIso();
@@ -38,16 +33,27 @@ export default function BudgetsPage() {
     [state.budgets, state.expenses, currentMonth],
   );
   const total = budgetTotalForMonth(state.budgets, currentMonth);
+  const progressOf = (id: string) => progress.find((x) => x.budgetId === id);
 
-  const sorted = [...state.budgets].sort((a, b) => a.order - b.order);
-  const filtered = filter === "all" ? sorted : sorted.filter((b) => b.type === filter);
-
-  const TABS: Array<{ value: "all" | BudgetType; label: string }> = [
+  const TABS: Array<{ value: "all" | "risk" | "over" | "fixed"; label: string }> = [
     { value: "all", label: "Tous" },
-    { value: "monthly", label: "Mensuels" },
-    { value: "annual", label: "Annuels" },
-    { value: "savings", label: "Épargne" },
+    { value: "risk", label: "À risque" },
+    { value: "over", label: "Dépassés" },
+    { value: "fixed", label: "Fixes" },
   ];
+
+  const q = search.trim().toLowerCase();
+  const filtered = [...state.budgets]
+    .sort((a, b) => a.order - b.order)
+    .filter((b) => (q ? b.name.toLowerCase().includes(q) : true))
+    .filter((b) => {
+      if (filter === "all") return true;
+      if (filter === "fixed") return b.type === "monthly";
+      const pct = progressOf(b.id)?.progress ?? 0;
+      if (filter === "risk") return b.active && pct >= 0.8;
+      if (filter === "over") return b.active && pct > 1;
+      return true;
+    });
 
   const totalSpent = progress.reduce((s, p) => s + p.spentCents, 0);
   const globalPct = total > 0 ? totalSpent / total : 0;
@@ -97,6 +103,14 @@ export default function BudgetsPage() {
         ))}
       </div>
 
+      <div className="mt-3">
+        <TextInput
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher une catégorie"
+        />
+      </div>
+
       <SectionTitle
         action={
           <button type="button" onClick={() => setCreating(true)}>
@@ -117,60 +131,20 @@ export default function BudgetsPage() {
         </button>
       )}
 
-      <Card>
+      <Card className="py-1">
         {filtered.length === 0 ? (
-          <EmptyState icon="📊" title="Aucun budget" hint="Créez votre premier budget." />
+          <EmptyState icon="📊" title="Aucun budget" hint="Aucune catégorie pour ce filtre." />
         ) : (
-          filtered.map((budget, i) => {
-            const p = progress.find((x) => x.budgetId === budget.id);
-            const color = tileColorFor(budget.id);
-            const pct = p ? p.progress : 0;
-            const status = pct > 1 ? "over" : pct >= 0.75 ? "warning" : "normal";
-            const ringC = !budget.active
-              ? "#c7c7cc"
-              : status === "over"
-              ? "#ff3b30"
-              : status === "warning"
-              ? "#ff9500"
-              : color.bar;
-
-            return (
-              <div key={budget.id}>
-                {i > 0 && <div className="my-3 border-t border-surface-muted" />}
-                <button
-                  type="button"
-                  onClick={() => router.push(`/budgets/${budget.id}`)}
-                  className="flex w-full items-center gap-3 text-left"
-                >
-                  <BudgetTile icon={budget.icon} bg={color.bg} color={color.bar} size={40} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-medium">{budget.name}</p>
-                      {!budget.active && (
-                        <span className="shrink-0 rounded-full bg-surface-subtle px-2 py-0.5 text-[10px] font-semibold text-ink-muted">
-                          Inactif
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-ink-muted">
-                      {TYPE_LABEL[budget.type]}
-                      {p && budget.active ? ` · ${formatCents(p.spentCents)} / ${formatCents(p.plannedMonthlyCents)}` : ""}
-                    </p>
-                  </div>
-                  {budget.active && p ? (
-                    <RingProgress progress={pct} size={38} stroke={3.5} color={ringC}>
-                      <span className="text-[9px] font-bold" style={{ color: ringC }}>
-                        {Math.round(pct * 100)}%
-                      </span>
-                    </RingProgress>
-                  ) : (
-                    <div className="h-9 w-9" />
-                  )}
-                  <Chevron />
-                </button>
-              </div>
-            );
-          })
+          filtered.map((budget, i) => (
+            <div key={budget.id}>
+              {i > 0 && <div className="border-t border-surface-muted/70" />}
+              <BudgetRow
+                budget={budget}
+                progress={progressOf(budget.id)}
+                onClick={() => router.push(`/budgets/${budget.id}`)}
+              />
+            </div>
+          ))
         )}
       </Card>
 
