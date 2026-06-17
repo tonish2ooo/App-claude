@@ -467,6 +467,8 @@ export function buildDemoState(): LocalAppState {
     savingsGoals,
     monthClosures,
     passkeys: [],
+    bankConnection: null,
+    bankTransactions: [],
     onboardingComplete: true,
     currentUserId: u1,
   };
@@ -499,6 +501,8 @@ export function buildEmptyState(): LocalAppState {
     savingsGoals: [],
     monthClosures: [],
     passkeys: [],
+    bankConnection: null,
+    bankTransactions: [],
     onboardingComplete: false,
     currentUserId: null,
   };

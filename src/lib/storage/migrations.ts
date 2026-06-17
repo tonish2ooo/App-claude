@@ -45,6 +45,15 @@ export function migrateState(raw: unknown): LocalAppState | null {
     };
   }
 
+  // v5 -> v6 : connexion bancaire et transactions à rapprocher.
+  if ((state.version ?? 1) < 6) {
+    migrated = {
+      ...migrated,
+      bankConnection: migrated.bankConnection ?? null,
+      bankTransactions: migrated.bankTransactions ?? [],
+    };
+  }
+
   if (!migrated.household) return null;
 
   const result: LocalAppState = {
@@ -61,6 +70,8 @@ export function migrateState(raw: unknown): LocalAppState | null {
     savingsGoals: migrated.savingsGoals ?? [],
     monthClosures: migrated.monthClosures ?? [],
     passkeys: migrated.passkeys ?? [],
+    bankConnection: migrated.bankConnection ?? null,
+    bankTransactions: migrated.bankTransactions ?? [],
     onboardingComplete: migrated.onboardingComplete ?? false,
     currentUserId: migrated.currentUserId ?? null,
   };

@@ -11,6 +11,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import {
+  type BankConnection,
   type Budget,
   type Expense,
   type Household,
@@ -19,6 +20,7 @@ import {
   type Month,
   type MonthlyIncome,
   type PasskeyCredential,
+  type PendingBankTransaction,
   type ProvisionStatus,
   type RecurringExpense,
   type SavingsGoal,
@@ -103,6 +105,13 @@ interface AppStateApi {
 
   addPasskey: (credential: PasskeyCredential) => void;
   removePasskey: (id: string) => void;
+
+  setBankConnection: (connection: BankConnection | null) => void;
+  updateBankConnection: (patch: Partial<BankConnection>) => void;
+  /** Ajoute des transactions à rapprocher (déduplication par id). */
+  mergeBankTransactions: (transactions: PendingBankTransaction[]) => void;
+  /** Met à jour le statut d'une transaction (rapprochée / ignorée). */
+  resolveBankTransaction: (id: string, status: PendingBankTransaction["status"], expenseId?: string) => void;
 }
 
 const AppStateContext = createContext<AppStateApi | null>(null);
@@ -541,6 +550,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         update((prev) => ({ ...prev, passkeys: [...prev.passkeys, credential] })),
       removePasskey: (id) =>
         update((prev) => ({ ...prev, passkeys: prev.passkeys.filter((p) => p.id !== id) })),
+
+      setBankConnection: (connection) =>
+        update((prev) => ({ ...prev, bankConnection: connection })),
+      updateBankConnection: (patch) =>
+        update((prev) =>
+          prev.bankConnection
+            ? { ...prev, bankConnection: { ...prev.bankConnection, ...patch, updatedAt: now() } }
+            : prev,
+        ),
+      mergeBankTransactions: (transactions) =>
+        update((prev) => {
+          const known = new Set(prev.bankTransactions.map((t) => t.id));
+          const additions = transactions.filter((t) => !known.has(t.id));
+          return { ...prev, bankTransactions: [...prev.bankTransactions, ...additions] };
+        }),
+      resolveBankTransaction: (id, status, expenseId) =>
+        update((prev) => ({
+          ...prev,
+          bankTransactions: prev.bankTransactions.map((t) =>
+            t.id === id ? { ...t, status, expenseId: expenseId ?? t.expenseId } : t,
+          ),
+        })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, ready]);
