@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -33,12 +33,18 @@ function SortableWidget({
   widget,
   ctx,
   editing,
+  expanded,
+  rowPx,
+  onToggleExpand,
   onCycleSize,
   onRemove,
 }: {
   widget: WidgetInstance;
   ctx: WidgetCtx;
   editing: boolean;
+  expanded: boolean;
+  rowPx: number;
+  onToggleExpand: (id: string | null) => void;
   onCycleSize: () => void;
   onRemove: () => void;
 }) {
@@ -49,14 +55,51 @@ function SortableWidget({
   const span = SPAN[widget.size];
   const href = widgetHref(widget.type);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+  const [rowsNeeded, setRowsNeeded] = useState(span.row);
+
+  // Mesure si le contenu dépasse la hauteur de la cellule et calcule la
+  // hauteur (en lignes de grille) nécessaire pour tout afficher.
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const measure = () => {
+      const overflow = el.scrollHeight > el.clientHeight + 4;
+      setOverflowing(overflow);
+      const need = Math.max(span.row, Math.ceil((el.scrollHeight + 12) / (rowPx + 12)));
+      setRowsNeeded(need);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [widget.size, rowPx, span.row, ctx, expanded]);
+
+  const showOverflow = overflowing && !editing;
+  const rowSpan = expanded ? rowsNeeded : span.row;
+
   const style: React.CSSProperties = {
     gridColumn: `span ${span.col}`,
-    gridRow: `span ${span.row}`,
+    gridRow: `span ${rowSpan}`,
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
     touchAction: editing ? "none" : undefined,
   };
+
+  function handleClick() {
+    if (editing) return;
+    if (expanded) {
+      onToggleExpand(null);
+      return;
+    }
+    if (showOverflow) {
+      onToggleExpand(widget.id);
+      return;
+    }
+    if (href) ctx.navigate(href);
+  }
 
   const inner = (
     <div className="relative h-full overflow-hidden rounded-[22px] border border-surface-muted/70 bg-surface p-4 shadow-card">
@@ -82,7 +125,25 @@ function SortableWidget({
           </button>
         </div>
       )}
-      <WidgetCard type={widget.type} size={widget.size} ctx={ctx} />
+      <div ref={contentRef} className={expanded ? "h-full overflow-y-auto" : "h-full overflow-hidden"}>
+        <WidgetCard type={widget.type} size={widget.size} ctx={ctx} />
+      </div>
+      {showOverflow && !expanded && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-10 rounded-b-[22px]"
+            style={{ background: "linear-gradient(to top, rgb(var(--surface)), transparent)" }}
+          />
+          <div className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 text-base leading-none text-ink-muted">
+            ⌄
+          </div>
+        </>
+      )}
+      {expanded && (
+        <div className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 text-base leading-none text-ink-muted">
+          ⌃
+        </div>
+      )}
     </div>
   );
 
@@ -90,11 +151,9 @@ function SortableWidget({
     <div
       ref={setNodeRef}
       style={style}
-      className={editing ? "cursor-grab ring-2 ring-brand-600/40 rounded-[22px]" : ""}
+      className={editing ? "cursor-grab ring-2 ring-brand-600/40 rounded-[22px]" : showOverflow || href ? "cursor-pointer" : ""}
       {...(editing ? { ...attributes, ...listeners } : {})}
-      onClick={() => {
-        if (!editing && href) ctx.navigate(href);
-      }}
+      onClick={handleClick}
     >
       {inner}
     </div>
@@ -105,6 +164,7 @@ export function DashboardGrid({ ctx }: { ctx: WidgetCtx }) {
   const [layout, setLayout] = useState<WidgetInstance[]>(DEFAULT_LAYOUT);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rowPx, setRowPx] = useState(150);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -152,7 +212,10 @@ export function DashboardGrid({ ctx }: { ctx: WidgetCtx }) {
           <button
             type="button"
             className="text-sm font-medium text-brand-600"
-            onClick={() => setEditing((v) => !v)}
+            onClick={() => {
+              setExpandedId(null);
+              setEditing((v) => !v);
+            }}
           >
             {editing ? "Terminé" : "Personnaliser"}
           </button>
@@ -172,6 +235,9 @@ export function DashboardGrid({ ctx }: { ctx: WidgetCtx }) {
                 widget={w}
                 ctx={ctx}
                 editing={editing}
+                expanded={expandedId === w.id}
+                rowPx={rowPx}
+                onToggleExpand={setExpandedId}
                 onCycleSize={() =>
                   persist(layout.map((x) => (x.id === w.id ? { ...x, size: nextSize(x.size) } : x)))
                 }

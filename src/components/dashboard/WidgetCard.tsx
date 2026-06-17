@@ -35,10 +35,6 @@ function Head({ children }: { children: ReactNode }) {
   return <p className="text-[12px] font-medium text-ink-muted">{children}</p>;
 }
 
-function rows(size: WidgetSize, s = 1, m = 2, l = 4): number {
-  return size === "small" ? s : size === "medium" ? m : l;
-}
-
 /** Contenu d'un widget selon son type et sa taille. */
 export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: WidgetSize; ctx: WidgetCtx }) {
   const { summary } = ctx;
@@ -117,7 +113,7 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
       );
 
     case "watch": {
-      const list = ctx.watchedBudgets.slice(0, rows(size, 1, 2, 4));
+      const list = ctx.watchedBudgets;
       return (
         <div className="flex h-full flex-col">
           <Head>Budgets à surveiller</Head>
@@ -150,7 +146,7 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
     }
 
     case "todo": {
-      const list = ctx.toClassify.slice(0, rows(size, 1, 2, 4));
+      const list = ctx.toClassify;
       return (
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between">
@@ -174,7 +170,7 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
     }
 
     case "people": {
-      const list = summary.contributions.slice(0, size === "small" ? 1 : 2);
+      const list = summary.contributions;
       return (
         <div className="flex h-full flex-col">
           <Head>Répartition du foyer</Head>
@@ -185,14 +181,12 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
                   <span className="font-semibold">{ctx.userName(c.userId)}</span>
                   <span className="text-[11px] text-ink-muted">{Math.round(c.incomeSharePct * 100)} %</span>
                 </div>
-                {size !== "small" && (
-                  <div className="mt-1 flex justify-between text-[11px] text-ink-muted">
-                    <span>Argent de poche</span>
-                    <span className="font-semibold" style={{ color: c.remainingTotalCents < 0 ? "#FF453A" : GREEN }}>
-                      {formatCents(c.remainingTotalCents)}
-                    </span>
-                  </div>
-                )}
+                <div className="mt-1 flex justify-between text-[11px] text-ink-muted">
+                  <span>Argent de poche</span>
+                  <span className="font-semibold" style={{ color: c.remainingTotalCents < 0 ? "#FF453A" : GREEN }}>
+                    {formatCents(c.remainingTotalCents)}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -201,7 +195,7 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
     }
 
     case "goals": {
-      const list = ctx.goals.slice(0, rows(size, 1, 2, 3));
+      const list = ctx.goals;
       return (
         <div className="flex h-full flex-col">
           <Head>Objectifs d'épargne</Head>
