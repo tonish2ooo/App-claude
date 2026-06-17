@@ -166,6 +166,7 @@ export function DashboardGrid({ ctx }: { ctx: WidgetCtx }) {
   const [adding, setAdding] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rowPx, setRowPx] = useState(150);
+  const [cols, setCols] = useState(2);
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setLayout(loadLayout()), []);
@@ -175,7 +176,13 @@ export function DashboardGrid({ ctx }: { ctx: WidgetCtx }) {
     if (!el) return;
     const measure = () => {
       const w = el.clientWidth;
-      setRowPx(Math.max(110, Math.round((w - 12) / 2)));
+      // On vise des tuiles carrées d'environ 200 px : 2 colonnes sur mobile,
+      // davantage sur les grands écrans (Desktop).
+      const ideal = 200;
+      const gap = 12;
+      const next = Math.max(2, Math.min(6, Math.floor((w + gap) / (ideal + gap))));
+      setCols(next);
+      setRowPx(Math.max(110, Math.round((w - gap * (next - 1)) / next)));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -226,8 +233,12 @@ export function DashboardGrid({ ctx }: { ctx: WidgetCtx }) {
         <SortableContext items={layout.map((w) => w.id)} strategy={rectSortingStrategy}>
           <div
             ref={gridRef}
-            className="grid grid-cols-2 gap-3"
-            style={{ gridAutoRows: `${rowPx}px`, gridAutoFlow: "dense" }}
+            className="grid gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              gridAutoRows: `${rowPx}px`,
+              gridAutoFlow: "dense",
+            }}
           >
             {layout.map((w) => (
               <SortableWidget
