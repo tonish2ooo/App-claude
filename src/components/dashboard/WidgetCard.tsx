@@ -41,45 +41,76 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
 
   switch (type) {
     case "remaining": {
-      const big = size === "large" ? "text-[34px]" : size === "medium" ? "text-3xl" : "text-2xl";
+      const pct = Math.round(ctx.globalProgress * 100);
+      const amountColor = summary.remainingBudgetCents >= 0 ? GREEN : "#FF453A";
+      const trackColor = ctx.onTrack ? GREEN : "#FF9F0A";
+
+      if (size === "large") {
+        return (
+          <div className="flex h-full flex-col">
+            <Head>Disponible jusqu'au {ctx.lastDayLabel}</Head>
+            <div className="flex flex-1 flex-col items-center justify-center gap-4">
+              <RingProgress progress={ctx.globalProgress} size={132} stroke={12} color={trackColor}>
+                <span className="text-lg font-bold text-ink-muted">{pct}%</span>
+              </RingProgress>
+              <div className="text-center">
+                <p className="text-[38px] font-extrabold leading-none tracking-tight" style={{ color: amountColor }}>
+                  <Amount cents={summary.remainingBudgetCents} />
+                </p>
+                <p className="mt-1.5 text-[13px] text-ink-muted">{formatCents(ctx.perDayCents)} / jour possible</p>
+              </div>
+            </div>
+            <p className="mt-1 text-center text-[13px] font-medium" style={{ color: trackColor }}>
+              {pct} % utilisé · {ctx.onTrack ? "dans le rythme" : "au-dessus du rythme"}
+            </p>
+          </div>
+        );
+      }
+
+      const big = size === "medium" ? "text-3xl" : "text-2xl";
       return (
         <div className="flex h-full flex-col">
           <Head>Disponible jusqu'au {ctx.lastDayLabel}</Head>
-          <div className="mt-1 flex flex-1 items-center gap-3">
-            {size === "large" && (
-              <RingProgress progress={ctx.globalProgress} size={68} stroke={7} color={ctx.onTrack ? GREEN : "#FF9F0A"}>
-                <span className="text-[11px] font-bold text-ink-muted">{Math.round(ctx.globalProgress * 100)}%</span>
+          <div className="flex flex-1 items-center gap-3">
+            {size === "medium" && (
+              <RingProgress progress={ctx.globalProgress} size={72} stroke={8} color={trackColor}>
+                <span className="text-[11px] font-bold text-ink-muted">{pct}%</span>
               </RingProgress>
             )}
             <div className="min-w-0">
-              <p className={`font-extrabold leading-none tracking-tight ${big}`} style={{ color: summary.remainingBudgetCents >= 0 ? GREEN : "#FF453A" }}>
+              <p className={`font-extrabold leading-none tracking-tight ${big}`} style={{ color: amountColor }}>
                 <Amount cents={summary.remainingBudgetCents} />
               </p>
               <p className="mt-1 text-[11px] text-ink-muted">{formatCents(ctx.perDayCents)} / jour possible</p>
             </div>
           </div>
-          {size !== "small" && (
-            <p className="mt-1 text-[12px] font-medium" style={{ color: ctx.onTrack ? GREEN : "#FF9F0A" }}>
-              {Math.round(ctx.globalProgress * 100)} % utilisé · {ctx.onTrack ? "dans le rythme" : "au-dessus du rythme"}
+          {size === "medium" && (
+            <p className="mt-1 text-[12px] font-medium" style={{ color: trackColor }}>
+              {pct} % utilisé · {ctx.onTrack ? "dans le rythme" : "au-dessus du rythme"}
             </p>
           )}
         </div>
       );
     }
 
-    case "monthSpend":
+    case "monthSpend": {
+      const hero = size === "large" ? "text-[40px]" : size === "medium" ? "text-3xl" : "text-2xl";
       return (
         <div className="flex h-full flex-col">
           <Head>Dépensé ce mois</Head>
-          <p className="mt-1 text-2xl font-bold tracking-tight">{formatCents(summary.spentTotalCents)}</p>
-          <p className="text-[11px] text-ink-muted">sur {formatCents(summary.budgetTotalCents)}</p>
-          <div className="mt-auto pt-2">
+          <div className="flex flex-1 flex-col justify-center">
+            <p className={`font-bold leading-none tracking-tight ${hero}`}>{formatCents(summary.spentTotalCents)}</p>
+            <p className="mt-1.5 text-[12px] text-ink-muted">sur {formatCents(summary.budgetTotalCents)}</p>
+          </div>
+          <div className="pt-2">
             <ProgressBar progress={ctx.globalProgress} status={ctx.globalProgress > 1 ? "over" : "normal"} color={GREEN} />
           </div>
         </div>
       );
+    }
 
-    case "common":
+    case "common": {
+      const hero = size === "large" ? "text-[40px]" : size === "medium" ? "text-3xl" : "text-2xl";
       return (
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between gap-2">
@@ -88,29 +119,36 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
               {summary.commonBalanceStatus === "synced" ? "Synchro" : "Estimé"}
             </span>
           </div>
-          <p className="mt-1 text-2xl font-bold tracking-tight" style={{ color: summary.commonBalanceCents < 0 ? "#FF453A" : "rgb(var(--ink))" }}>
-            <Amount cents={summary.commonBalanceCents} />
-          </p>
-          <p className="text-[11px] text-ink-muted">sur {formatCents(summary.commonAccountTotalCents)}</p>
-          <div className="mt-auto pt-2">
+          <div className="flex flex-1 flex-col justify-center">
+            <p className={`font-bold leading-none tracking-tight ${hero}`} style={{ color: summary.commonBalanceCents < 0 ? "#FF453A" : "rgb(var(--ink))" }}>
+              <Amount cents={summary.commonBalanceCents} />
+            </p>
+            <p className="mt-1.5 text-[12px] text-ink-muted">sur {formatCents(summary.commonAccountTotalCents)}</p>
+          </div>
+          <div className="pt-2">
             <ProgressBar progress={ctx.commonRatio} status="normal" color={ctx.commonColor} />
           </div>
         </div>
       );
+    }
 
-    case "meal":
+    case "meal": {
+      const hero = size === "large" ? "text-[40px]" : size === "medium" ? "text-3xl" : "text-2xl";
       return (
         <div className="flex h-full flex-col">
           <Head>Tickets restaurant</Head>
-          <p className="mt-1 text-2xl font-bold tracking-tight" style={{ color: ctx.mealColor }}>
-            <Amount cents={ctx.mealRemaining} />
-          </p>
-          <p className="text-[11px] text-ink-muted">sur {formatCents(ctx.mealGranted)}</p>
-          <div className="mt-auto pt-2">
+          <div className="flex flex-1 flex-col justify-center">
+            <p className={`font-bold leading-none tracking-tight ${hero}`} style={{ color: ctx.mealColor }}>
+              <Amount cents={ctx.mealRemaining} />
+            </p>
+            <p className="mt-1.5 text-[12px] text-ink-muted">sur {formatCents(ctx.mealGranted)}</p>
+          </div>
+          <div className="pt-2">
             <ProgressBar progress={ctx.mealRatio} status="normal" color={ctx.mealColor} />
           </div>
         </div>
       );
+    }
 
     case "watch": {
       const list = ctx.watchedBudgets;
@@ -174,9 +212,9 @@ export function WidgetCard({ type, size, ctx }: { type: WidgetType; size: Widget
       return (
         <div className="flex h-full flex-col">
           <Head>Répartition du foyer</Head>
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 flex flex-1 flex-col gap-2">
             {list.map((c) => (
-              <div key={c.userId} className="rounded-xl bg-surface-subtle p-2.5">
+              <div key={c.userId} className="flex flex-1 flex-col justify-center rounded-xl bg-surface-subtle p-2.5">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">{ctx.userName(c.userId)}</span>
                   <span className="text-[11px] text-ink-muted">{Math.round(c.incomeSharePct * 100)} %</span>
