@@ -121,6 +121,25 @@ describe("résumé dashboard complet", () => {
     expect(summary.incomeComplete).toBe(true);
   });
 
+  it("affiche le solde réel synchronisé quand une banque est liée", () => {
+    const household = makeHousehold();
+    const budgets = [makeBudget("courses", "monthly", 40000)];
+    const expenses = [
+      makeExpense("e1", { budgetId: "courses", amountCents: 30000, paymentSource: "common_account" }),
+    ];
+    const summary = buildDashboardSummary({
+      household,
+      users: [u1, u2],
+      budgets,
+      incomes,
+      expenses,
+      month: MONTH,
+      syncedCommonBalanceCents: 123456,
+    });
+    expect(summary.commonBalanceCents).toBe(123456);
+    expect(summary.commonBalanceStatus).toBe("synced");
+  });
+
   it("signale les revenus manquants", () => {
     const household = makeHousehold();
     const summary = buildDashboardSummary({

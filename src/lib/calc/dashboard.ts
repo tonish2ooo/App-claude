@@ -129,8 +129,10 @@ export function buildDashboardSummary(params: {
   incomes: MonthlyIncome[];
   expenses: Expense[];
   month: Month;
+  /** Solde réel synchronisé du compte commun (centimes), si une banque est liée. */
+  syncedCommonBalanceCents?: number | null;
 }): MonthlyDashboardSummary {
-  const { household, users, budgets, incomes, expenses, month } = params;
+  const { household, users, budgets, incomes, expenses, month, syncedCommonBalanceCents } = params;
   const activeUsers = users.filter((u) => u.active);
 
   const budgetTotalCents = budgetTotalForMonth(budgets, month);
@@ -150,9 +152,13 @@ export function buildDashboardSummary(params: {
   const mealVouchersGrantedCents = mvBalances.reduce((acc, b) => acc + b.grantedCents, 0);
   const commonSpent = spentFromCommonAccount(expenses, month);
   const commonAccountTotalCents = contributionsTotalCents - mealVouchersGrantedCents;
-  const commonBalanceCents = commonAccountTotalCents - commonSpent;
-  const commonBalanceStatus: MonthlyDashboardSummary["commonBalanceStatus"] =
-    household.mode === "bank" ? "synced" : "estimated";
+  // Si une banque est liée et a renvoyé un solde réel, on l'affiche tel quel
+  // (« synchro ») ; sinon on retombe sur l'estimation calculée.
+  const hasSynced = syncedCommonBalanceCents != null;
+  const commonBalanceCents = hasSynced ? syncedCommonBalanceCents : commonAccountTotalCents - commonSpent;
+  const commonBalanceStatus: MonthlyDashboardSummary["commonBalanceStatus"] = hasSynced
+    ? "synced"
+    : "estimated";
 
   return {
     month,

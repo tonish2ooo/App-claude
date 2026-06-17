@@ -18,6 +18,13 @@ export default function DashboardPage() {
   const [incomeUserId, setIncomeUserId] = useState<string | null>(null);
   const router = useRouter();
 
+  const syncedCommonBalanceCents = useMemo(() => {
+    const conn = state.bankConnection;
+    if (!conn || conn.status !== "linked") return null;
+    const acc = conn.accounts.find((a) => a.id === conn.commonAccountId);
+    return acc?.balanceCents ?? null;
+  }, [state.bankConnection]);
+
   const summary = useMemo(
     () =>
       buildDashboardSummary({
@@ -27,8 +34,9 @@ export default function DashboardPage() {
         incomes: state.incomes,
         expenses: state.expenses,
         month: currentMonth,
+        syncedCommonBalanceCents,
       }),
-    [state, currentMonth],
+    [state, currentMonth, syncedCommonBalanceCents],
   );
 
   const budgets = activeBudgets(state.budgets);

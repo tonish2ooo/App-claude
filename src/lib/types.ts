@@ -385,7 +385,59 @@ export interface MonthClosure {
 // État applicatif persistant (localStorage)
 // ---------------------------------------------------------------------------
 
-export const APP_STATE_VERSION = 5;
+export const APP_STATE_VERSION = 6;
+
+// ---------------------------------------------------------------------------
+// Connexion bancaire (agrégation PSD2 — fournisseur GoCardless Bank Account Data)
+// ---------------------------------------------------------------------------
+
+/** Fournisseur d'agrégation. `demo` = données fictives tant qu'aucune clé n'est configurée. */
+export type BankProviderId = "gocardless" | "demo";
+
+export type BankConnectionStatus = "pending" | "linked" | "error";
+
+/** Un compte bancaire rattaché à la connexion. */
+export interface BankAccountLink {
+  /** Identifiant du compte chez le fournisseur. */
+  id: string;
+  name?: string;
+  iban?: string;
+  currency?: CurrencyCode;
+  /** Dernier solde synchronisé (centimes). */
+  balanceCents?: Cents;
+}
+
+/** Connexion à une banque (une requisition GoCardless). Aucun secret stocké ici. */
+export interface BankConnection {
+  provider: BankProviderId;
+  /** Identifiant de l'établissement (ex. "ING_INGBBEBB"). */
+  institutionId: string;
+  institutionName: string;
+  /** Identifiant de la requisition côté fournisseur. */
+  requisitionId: string;
+  status: BankConnectionStatus;
+  accounts: BankAccountLink[];
+  /** Compte choisi comme « compte commun » pour la synchro du solde. */
+  commonAccountId?: string;
+  lastSyncAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Transaction importée depuis la banque, en attente de rapprochement. */
+export interface PendingBankTransaction {
+  /** Identifiant fournisseur (clé de déduplication). */
+  id: string;
+  accountId: string;
+  /** Format "YYYY-MM-DD". */
+  date: string;
+  /** Montant signé (négatif = débit). */
+  amountCents: Cents;
+  label: string;
+  status: "pending" | "imported" | "dismissed";
+  /** Dépense créée lors de l'import, le cas échéant. */
+  expenseId?: string;
+}
 
 export interface LocalAppState {
   version: number;
@@ -402,6 +454,10 @@ export interface LocalAppState {
   savingsGoals: SavingsGoal[];
   monthClosures: MonthClosure[];
   passkeys: PasskeyCredential[];
+  /** Connexion bancaire active (null si aucune). */
+  bankConnection: BankConnection | null;
+  /** Transactions bancaires importées, en attente de rapprochement. */
+  bankTransactions: PendingBankTransaction[];
   /** Onboarding terminé. */
   onboardingComplete: boolean;
   /** Utilisateur connecté (mode demo/local). */

@@ -6,6 +6,7 @@ import { MonthSwitcher } from "@/components/layout/MonthSwitcher";
 import { Amount, Avatar, BudgetTile, Card, Chevron, EmptyState, SectionTitle } from "@/components/ui/primitives";
 import { Select, TextInput } from "@/components/ui/fields";
 import { ExpenseSheet } from "@/components/expenses/ExpenseSheet";
+import { BankReconcile } from "@/components/bank/BankReconcile";
 import { contributionSummaries } from "@/lib/calc/dashboard";
 import { activeBudgets } from "@/lib/calc/budget";
 import { formatCents } from "@/lib/money";
@@ -199,6 +200,11 @@ export default function ActivityPage() {
   return (
     <div className="space-y-1">
       <MonthSwitcher />
+
+      {/* Transactions bancaires à rapprocher */}
+      <div className="mt-3">
+        <BankReconcile />
+      </div>
 
       {/* À venir */}
       {plannedExpenses.length > 0 && (
