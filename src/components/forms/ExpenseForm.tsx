@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAppState } from "@/state/AppStateContext";
 import { Field, Segmented, Select, TextArea, TextInput } from "@/components/ui/fields";
 import { SplitEditor } from "@/components/forms/SplitEditor";
@@ -64,11 +64,24 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
     }
   }
 
-  async function scan() {
-    if (!receiptUrl) return;
+  const scanInputRef = useRef<HTMLInputElement>(null);
+
+  // Bouton principal : prend une photo et lance la lecture automatiquement.
+  async function onScanFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const url = await readFileAsDataUrl(file);
+    setReceiptUrl(url);
+    await scan(url);
+  }
+
+  async function scan(url?: string) {
+    const target = url ?? receiptUrl;
+    if (!target) return;
     setScanStatus("scanning");
     try {
-      const res = await scanReceipt(receiptUrl);
+      const res = await scanReceipt(target);
       if (res.amountCents) setAmount(centsToInput(res.amountCents));
       if (res.date) setDate(res.date);
       if (res.header) {
@@ -142,6 +155,34 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
         <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-warn">
           Les revenus du mois ne sont pas déclarés : la répartition au prorata peut être imprécise.
         </p>
+      )}
+
+      {/* Scan du ticket — entrée principale */}
+      {!expense && (
+        <>
+          <button
+            type="button"
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-600"
+            onClick={() => scanInputRef.current?.click()}
+            disabled={scanStatus === "scanning"}
+          >
+            {scanStatus === "scanning" ? "Lecture du ticket…" : "📷 Scanner un ticket"}
+          </button>
+          <input
+            ref={scanInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={onScanFile}
+          />
+          {scanStatus === "done" && (
+            <p className="mb-3 text-xs text-ok">Ticket lu — vérifie le montant, la date et l'enseigne ci-dessous.</p>
+          )}
+          {scanStatus === "error" && (
+            <p className="mb-3 text-xs text-danger">Lecture impossible. Réessaie avec une photo plus nette.</p>
+          )}
+        </>
       )}
 
       <Field label="Type">
@@ -290,7 +331,7 @@ export function ExpenseForm({ onDone, expense }: { onDone: () => void; expense?:
                 type="button"
                 className="btn-ghost"
                 disabled={scanStatus === "scanning"}
-                onClick={scan}
+                onClick={() => scan()}
               >
                 {scanStatus === "scanning" ? "Lecture du ticket…" : "🔍 Scanner le ticket"}
               </button>
